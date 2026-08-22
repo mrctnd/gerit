@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="İşlerini hızlı, sade ve güvenli biçimde yöneten kişisel görev merkezi.">
+    <meta name="theme-color" content="#102a43">
+    <title><%= view.title %> · TodoSlate</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/today" aria-label="TodoSlate ana sayfa">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <span>
+            <strong>TodoSlate</strong>
+            <small>kişisel iş alanın</small>
+          </span>
+        </a>
+
+        <nav class="primary-nav" aria-label="İş görünümleri">
+          <a class="nav-item <%= currentPath === '/today' ? 'active' : '' %>" href="/today">
+            <span class="nav-icon" aria-hidden="true">●</span>
+            <span>Bugün</span>
+            <% if (counts.today) { %><span class="nav-count"><%= counts.today %></span><% } %>
+          </a>
+          <a class="nav-item <%= currentPath === '/upcoming' ? 'active' : '' %>" href="/upcoming">
+            <span class="nav-icon calendar-icon" aria-hidden="true">▦</span>
+            <span>Yaklaşan</span>
+            <% if (counts.upcoming) { %><span class="nav-count"><%= counts.upcoming %></span><% } %>
+          </a>
+          <a class="nav-item <%= currentPath === '/inbox' ? 'active' : '' %>" href="/inbox">
+            <span class="nav-icon" aria-hidden="true">⌄</span>
+            <span>Gelen Kutusu</span>
+            <% if (counts.inbox) { %><span class="nav-count"><%= counts.inbox %></span><% } %>
+          </a>
+          <a class="nav-item <%= currentPath === '/completed' ? 'active' : '' %>" href="/completed">
+            <span class="nav-icon completed-icon" aria-hidden="true">✓</span>
+            <span>Tamamlananlar</span>
+            <% if (counts.completed) { %><span class="nav-count"><%= counts.completed %></span><% } %>
+          </a>
+        </nav>
+
+        <section class="projects" aria-labelledby="projects-title">
+          <div class="sidebar-heading">
+            <span id="projects-title">Projeler</span>
+            <span aria-hidden="true">#</span>
+          </div>
+          <div class="project-list">
+            <% if (!projects.length) { %>
+              <p class="projects-empty">Bir işe <strong>#ofis</strong> ekleyerek ilk projeni başlat.</p>
+            <% } %>
+            <% projects.forEach((project, index) => { %>
+              <% const projectPath = `/projects/${encodeURIComponent(project.name)}`; %>
+              <a class="project-link <%= currentPath === projectPath ? 'active' : '' %>" href="<%= projectPath %>">
+                <span class="project-dot color-<%= index % 5 %>" aria-hidden="true"></span>
+                <span><%= project.name %></span>
+                <span class="nav-count"><%= project.count %></span>
+              </a>
+            <% }) %>
+          </div>
+        </section>
+
+        <div class="shortcut-card" aria-label="Klavye kısayolları">
+          <p>Klavye ile hızlan</p>
+          <div><span><kbd>N</kbd> Yeni iş</span><span><kbd>/</kbd> Arama</span></div>
+          <div><span><kbd>X</kbd> Tamamla</span><span><kbd>J K</kbd> Gezin</span></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <a class="mobile-brand" href="/today" aria-label="TodoSlate ana sayfa"><span>T</span> TodoSlate</a>
+          <form class="search-form" action="/search" method="get" role="search">
+            <label class="sr-only" for="global-search">İşlerde ara</label>
+            <span class="search-icon" aria-hidden="true"></span>
+            <input id="global-search" name="q" type="search" value="<%= view.searchQuery || '' %>" placeholder="İşlerde ara" autocomplete="off">
+            <kbd>/</kbd>
+          </form>
+          <div class="local-badge" title="Şirket ağına özel çalışma alanı">
+            <span aria-hidden="true"></span> Şirket içi
+          </div>
+        </header>
+
+        <div class="page-wrap">
+          <section class="page-heading">
+            <div>
+              <p class="eyebrow"><%= view.kicker %></p>
+              <h1><%= view.title %></h1>
+            </div>
+            <% if (view.kind !== 'edit') { %>
+              <p class="page-hint"><kbd>N</kbd> ile ekle · <kbd>X</kbd> ile tamamla</p>
+            <% } %>
+          </section>
+
+          <% if (currentPath === '/today') { %>
+            <section class="work-summary" aria-label="Günün iş özeti">
+              <article>
+                <span>Açık işler</span>
+                <strong><%= summary.open %></strong>
+                <small>tüm projelerde</small>
+              </article>
+              <article>
+                <span>Bugün</span>
+                <strong><%= summary.dueToday %></strong>
+                <small>planlanmış iş</small>
+              </article>
+              <article class="<%= summary.overdue ? 'summary-danger' : '' %>">
+                <span>Geciken</span>
+                <strong><%= summary.overdue %></strong>
+                <small><%= summary.overdue ? 'önce bunlara odaklan' : 'her şey yolunda' %></small>
+              </article>
+              <article class="summary-success">
+                <span>Tamamlanan</span>
+                <strong><%= summary.completedToday %></strong>
+                <small>bugünkü ilerleme</small>
+              </article>
+            </section>
+          <% } %>
+
+          <% if (view.kind !== 'edit' && view.kind !== 'message') { %>
+            <section class="quick-add-card" aria-labelledby="quick-add-title">
+              <form action="/tasks" method="post" id="quick-add-form">
+                <input type="hidden" name="returnTo" value="<%= returnPath %>">
+                <div class="quick-add-main">
+                  <span class="quick-plus" aria-hidden="true">+</span>
+                  <label class="sr-only" id="quick-add-title" for="quick-add">Yeni iş ekle</label>
+                  <input id="quick-add" name="quick" required autocomplete="off" placeholder="Teklifi yarın 16:00 gönder #satış p1">
+                  <button type="submit">İşi ekle <kbd>↵</kbd></button>
+                </div>
+                <details class="quick-details">
+                  <summary>Not ve tekrar ekle</summary>
+                  <div class="quick-detail-grid">
+                    <label>
+                      <span>Notlar</span>
+                      <input name="notes" placeholder="Hatırlaman gereken ayrıntılar">
+                    </label>
+                    <label>
+                      <span>Tekrar</span>
+                      <input name="repeat" placeholder="her ayın 1’i veya her pazartesi,perşembe">
+                    </label>
+                  </div>
+                </details>
+              </form>
+              <p class="syntax-hint"><span>Örnek</span> “Raporu <strong>yarın 16:00</strong> gönder <b>#finans</b> <em>p2</em>”</p>
+            </section>
+          <% } %>
+
+          <section class="task-surface" aria-live="polite">
+            <% if (view.kind === 'edit') { %>
+              <%- include('partials/edit-task', { task: view.task, returnTo: view.returnTo }) %>
+            <% } else { %>
+              <% const groups = view.kind === 'grouped' ? view.groups : [{ title: null, tone: 'default', tasks: view.tasks || [] }]; %>
+              <% const totalTasks = groups.reduce((sum, group) => sum + group.tasks.length, 0); %>
+
+              <% if (!totalTasks) { %>
+                <div class="empty-state">
+                  <span aria-hidden="true">✓</span>
+                  <h2><%= view.emptyTitle %></h2>
+                  <p><%= view.emptyCopy %></p>
+                  <% if (view.kind === 'message') { %><a href="/today">Bugün'e dön</a><% } %>
+                </div>
+              <% } else { %>
+                <% groups.forEach((group) => { %>
+                  <% if (group.tasks.length) { %>
+                    <section class="task-group <%= group.tone === 'danger' ? 'danger-group' : '' %>">
+                      <% if (group.title) { %>
+                        <div class="group-heading">
+                          <h2><%= group.title %></h2>
+                          <span><%= group.tasks.length %></span>
+                        </div>
+                      <% } %>
+                      <div class="task-list">
+                        <% group.tasks.forEach((task) => { %>
+                          <%- include('partials/task-row', { task }) %>
+                        <% }) %>
+                      </div>
+                    </section>
+                  <% } %>
+                <% }) %>
+              <% } %>
+            <% } %>
+          </section>
+        </div>
+
+        <footer class="app-footer">
+          <span><span class="footer-dot" aria-hidden="true"></span> Değişiklikler otomatik kaydedilir</span>
+          <span><%= config.timezone %></span>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

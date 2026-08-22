@@ -1,0 +1,11 @@
+[Unit]
+Description=TodoSlate günlük yedekleme zamanlayıcısı
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=10m
+Unit=todoslate-backup.service
+
+[Install]
+WantedBy=timers.target

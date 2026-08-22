@@ -1,0 +1,33 @@
+<article class="task-row <%= task.completedAt ? 'is-completed' : (task.due.overdue ? 'is-overdue' : '') %>" data-task-row data-task-id="<%= task.id %>" tabindex="-1">
+  <% if (task.completedAt) { %>
+    <form action="/tasks/<%= task.id %>/reopen" method="post" class="reopen-form">
+      <input type="hidden" name="returnTo" value="<%= returnPath %>">
+      <button type="submit" class="complete-button reopen-button" aria-label="<%= task.title %> işini yeniden aç" title="İşi yeniden aç">
+        <span aria-hidden="true">↺</span>
+      </button>
+    </form>
+  <% } else { %>
+    <form action="/tasks/<%= task.id %>/complete" method="post" class="complete-form">
+      <input type="hidden" name="returnTo" value="<%= returnPath %>">
+      <button type="submit" class="complete-button priority-<%= task.priority || 0 %>" aria-label="<%= task.title %> işini tamamla" title="İşi tamamla (x)">
+        <span aria-hidden="true">✓</span>
+      </button>
+    </form>
+  <% } %>
+  <a class="task-body" href="/tasks/<%= task.id %>/edit?from=<%= encodeURIComponent(returnPath) %>">
+    <span class="task-title"><%= task.title %></span>
+    <% if (task.notes) { %><span class="task-notes"><%= task.notes %></span><% } %>
+    <% if (task.completedLabel || task.due.label || task.project || task.priority || task.repeatLabel) { %>
+      <span class="task-meta">
+        <% if (task.completedLabel) { %><span class="meta-chip completed-chip">✓ <%= task.completedLabel %></span><% } %>
+        <% if (task.due.label) { %>
+          <span class="meta-chip due-chip <%= !task.completedAt && task.due.overdue ? 'overdue-chip' : '' %>"><%= !task.completedAt && task.due.overdue ? '↑ ' : '' %><%= task.due.label %></span>
+        <% } %>
+        <% if (task.project) { %><span class="meta-chip project-chip">#<%= task.project %></span><% } %>
+        <% if (task.priority) { %><span class="meta-chip priority-chip p<%= task.priority %>">P<%= task.priority %></span><% } %>
+        <% if (task.repeatLabel) { %><span class="meta-chip repeat-chip">↻ <%= task.repeatLabel %></span><% } %>
+      </span>
+    <% } %>
+  </a>
+  <a class="edit-link" href="/tasks/<%= task.id %>/edit?from=<%= encodeURIComponent(returnPath) %>" aria-label="<%= task.title %> işini düzenle">•••</a>
+</article>

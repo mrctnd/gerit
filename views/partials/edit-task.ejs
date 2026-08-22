@@ -1,0 +1,61 @@
+<div class="edit-card">
+  <% if (task.completedAt) { %>
+    <div class="completed-banner">Bu iş tamamlandı. Kaydını yine de düzenleyebilir veya silebilirsin.</div>
+  <% } %>
+  <form action="/tasks/<%= task.id %>" method="post" class="edit-form">
+    <input type="hidden" name="returnTo" value="<%= returnTo %>">
+    <label class="field field-wide">
+      <span>İş başlığı</span>
+      <input name="title" value="<%= task.title %>" required autofocus>
+    </label>
+    <label class="field field-wide">
+      <span>Notlar</span>
+      <textarea name="notes" rows="6" placeholder="Bağlam, bağlantı, telefon numarası veya diğer ayrıntılar"><%= task.notes %></textarea>
+    </label>
+    <div class="form-grid">
+      <label class="field">
+        <span>Proje</span>
+        <span class="input-prefix"><b>#</b><input name="project" value="<%= task.project || '' %>" placeholder="ofis"></span>
+      </label>
+      <label class="field">
+        <span>Öncelik</span>
+        <select name="priority">
+          <option value="" <%= !task.priority ? 'selected' : '' %>>Öncelik yok</option>
+          <option value="1" <%= task.priority === 1 ? 'selected' : '' %>>P1 · Acil</option>
+          <option value="2" <%= task.priority === 2 ? 'selected' : '' %>>P2 · Önemli</option>
+          <option value="3" <%= task.priority === 3 ? 'selected' : '' %>>P3 · Normal</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Son tarih</span>
+        <input name="dueAt" type="datetime-local" value="<%= toDateTimeInput(task.dueAt) %>">
+      </label>
+      <label class="field">
+        <span>Tekrar</span>
+        <input name="recurrence" value="<%= task.recurrence || '' %>" placeholder="her pazartesi,perşembe">
+        <small>Türkçe tekrar ifadesi veya standart RRULE</small>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Değişiklikleri kaydet</button>
+      <a class="secondary-button" href="<%= returnTo %>">Vazgeç</a>
+    </div>
+  </form>
+  <div class="secondary-actions">
+    <% if (task.completedAt) { %>
+      <form action="/tasks/<%= task.id %>/reopen" method="post">
+        <input type="hidden" name="returnTo" value="<%= returnTo %>">
+        <button type="submit">İşi yeniden aç</button>
+      </form>
+    <% } else { %>
+      <form action="/tasks/<%= task.id %>/duplicate" method="post">
+        <input type="hidden" name="returnTo" value="<%= returnTo %>">
+        <button type="submit">Bir kopyasını oluştur</button>
+      </form>
+    <% } %>
+    <form action="/tasks/<%= task.id %>/delete" method="post" class="delete-form" data-confirm="Bu iş kalıcı olarak silinsin mi?">
+      <input type="hidden" name="returnTo" value="<%= returnTo %>">
+      <button type="submit">İşi sil</button>
+    </form>
+  </div>
+</div>

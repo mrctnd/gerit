@@ -1,0 +1,18 @@
+[Unit]
+Description=TodoSlate SQLite yedeği
+
+[Service]
+Type=oneshot
+User=todoslate
+Group=todoslate
+EnvironmentFile=/etc/todoslate/todoslate.env
+Environment=BACKUP_DIR=/var/backups/todoslate
+Environment=RETENTION_DAYS=30
+ExecStart=/usr/local/sbin/todoslate-backup
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/todoslate
+ReadOnlyPaths=/var/lib/todoslate
