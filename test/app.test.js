@@ -5,6 +5,7 @@ import path from 'node:path';
 import { after, before, test } from 'node:test';
 import request from 'supertest';
 
+process.env.TZ = 'UTC';
 const databasePath = path.join(os.tmpdir(), `local-tasks-${process.pid}-${Date.now()}.sqlite3`);
 process.env.DATABASE_PATH = databasePath;
 process.env.NTFY_TOPIC = 'local-tasks-test-topic';

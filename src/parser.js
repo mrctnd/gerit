@@ -33,9 +33,13 @@ export function parseQuickAdd(raw, referenceDate = new Date()) {
   if (recurrence.match) working = working.replace(recurrence.match, ' ');
 
   const turkishDate = parseTurkishDate(working, referenceDate);
-  const dateResult = turkishDate || chrono.casual.parse(working, referenceDate, { forwardDate: true })[0];
+  const chronoReference = {
+    instant: referenceDate,
+    timezone: DateTime.fromJSDate(referenceDate).setZone(config.timezone).offset,
+  };
+  const dateResult = turkishDate || chrono.casual.parse(working, chronoReference, { forwardDate: true })[0];
   let dueDate = dateResult
-    ? (dateResult.date instanceof Date ? dateResult.date : dateResult.start.date())
+    ? (dateResult.date instanceof Date ? dateResult.date : chronoResultDate(dateResult))
     : null;
   if (dateResult) {
     working = `${working.slice(0, dateResult.index)} ${working.slice(dateResult.index + dateResult.text.length)}`;
@@ -56,6 +60,23 @@ export function parseQuickAdd(raw, referenceDate = new Date()) {
     dueAt: fromJsDate(dueDate),
     recurrence: recurrence.rrule,
   };
+}
+
+function chronoResultDate(result) {
+  if (result.start.isCertain('timezoneOffset')) return result.start.date();
+
+  const component = result.start;
+  const configuredDate = DateTime.fromObject({
+    year: component.get('year'),
+    month: component.get('month'),
+    day: component.get('day'),
+    hour: component.get('hour'),
+    minute: component.get('minute'),
+    second: component.get('second') || 0,
+    millisecond: component.get('millisecond') || 0,
+  }, { zone: config.timezone });
+
+  return configuredDate.isValid ? configuredDate.toJSDate() : result.start.date();
 }
 
 function parseTurkishDate(source, referenceDate) {
