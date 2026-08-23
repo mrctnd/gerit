@@ -15,7 +15,7 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 - Üst çubuk, görev kartları, hızlı ekleme ve mobil görünüm yeni tasarım sistemiyle iyileştirildi.
 - Görünüm tercihleri yalnızca tarayıcının yerel depolamasında saklanıyor.
-- Sayfa geçişleri tek katmanlı ve daha kısa bir hareket ritmine sadeleştirildi.
+- Sayfa ve görünüm değişimlerindeki otomatik içerik giriş animasyonu kaldırıldı; yalnızca doğrudan işlem geri bildirimleri hareketli kaldı.
 
 ## [0.1.0] - 2026-08-23
 

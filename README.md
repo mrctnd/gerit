@@ -25,7 +25,7 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Geciken işleri Bugün görünümünün en üstünde kırmızı sabitleme
 - Serbest metin notları, görev kopyalama ve yeniden açma
 - Dört renk paleti, dört yerel font seti ve cihazda saklanan görünüm tercihleri
-- Akıcı sayfa geçişleri, görev tamamlama geri bildirimi ve azaltılmış hareket modu
+- Butonlarda, görev tamamlamada ve görünüm panelinde ölçülü mikro etkileşimler; azaltılmış hareket modu
 - ntfy ile zamanı gelen işler ve her sabah 07:00 günlük özet
 - Her terminalden `t add "..."` ile hızlı yakalama
 - Express + EJS + better-sqlite3; istemci çerçevesi ve bulut hesabı yok

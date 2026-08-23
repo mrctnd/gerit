@@ -207,3 +207,9 @@ test('Gerit logosu uygulamanın kendi statik dosyası olarak sunulur', async () 
   assert.match(response.headers['content-type'], /^image\/png/);
   assert.ok(response.body.length > 100_000);
 });
+
+test('görünüm değişimleri gecikmeli sayfa giriş animasyonu çalıştırmaz', () => {
+  const clientScript = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(clientScript, /runEntranceSequence|page-transition|window\.location\.assign/);
+});

@@ -95,7 +95,7 @@
         </header>
 
         <div class="page-wrap">
-          <section class="page-heading" data-entrance>
+          <section class="page-heading">
             <div>
               <p class="eyebrow"><%= view.kicker %></p>
               <h1><%= view.title %></h1>
@@ -106,7 +106,7 @@
           </section>
 
           <% if (currentPath === '/today') { %>
-            <section class="work-summary" aria-label="Günün iş özeti" data-entrance-group>
+            <section class="work-summary" aria-label="Günün iş özeti">
               <article>
                 <span>Açık işler</span>
                 <strong><%= summary.open %></strong>
@@ -131,7 +131,7 @@
           <% } %>
 
           <% if (view.kind !== 'edit' && view.kind !== 'message') { %>
-            <section class="quick-add-card" aria-labelledby="quick-add-title" data-entrance>
+            <section class="quick-add-card" aria-labelledby="quick-add-title">
               <form action="/tasks" method="post" id="quick-add-form">
                 <input type="hidden" name="returnTo" value="<%= returnPath %>">
                 <div class="quick-add-main">
@@ -158,7 +158,7 @@
             </section>
           <% } %>
 
-          <section class="task-surface" aria-live="polite" data-entrance-group>
+          <section class="task-surface" aria-live="polite">
             <% if (view.kind === 'edit') { %>
               <%- include('partials/edit-task', { task: view.task, returnTo: view.returnTo }) %>
             <% } else { %>

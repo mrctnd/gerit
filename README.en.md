@@ -24,7 +24,7 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - Today, Upcoming, Inbox, project, and Completed views
 - Overdue tasks pinned in red at the top of Today
 - Four color palettes, four local font sets, and device-local appearance preferences
-- Smooth page transitions, completion feedback, and a reduced-motion mode
+- Restrained micro-interactions for buttons, completion, and appearance controls, plus reduced motion
 - ntfy due reminders and a daily 07:00 digest
 - Terminal capture with `t add "..."`
 - Server-rendered Express + EJS UI and a single better-sqlite3 database

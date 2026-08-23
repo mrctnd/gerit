@@ -149,40 +149,6 @@
     appearanceTrigger?.focus({ preventScroll: true });
   }
 
-  function runEntranceSequence() {
-    const primaryTargets = [
-      document.querySelector('.page-heading'),
-      ...document.querySelectorAll('.work-summary > article'),
-      document.querySelector('.quick-add-card'),
-    ].filter(Boolean);
-
-    primaryTargets.forEach((target, index) => {
-      play(target, [
-        { opacity: 0.01, transform: 'translateY(7px)' },
-        { opacity: 1, transform: 'translateY(0)' },
-      ], {
-        duration: 260,
-        delay: index * 24,
-        fill: 'backwards',
-      });
-    });
-
-    const listTargets = [
-      ...document.querySelectorAll('.group-heading, .task-row, .empty-state, .edit-card'),
-    ].slice(0, 24);
-
-    listTargets.forEach((target, index) => {
-      play(target, [
-        { opacity: 0.01, transform: 'translateY(5px)' },
-        { opacity: 1, transform: 'translateY(0)' },
-      ], {
-        duration: 220,
-        delay: 72 + Math.min(index * 16, 144),
-        fill: 'backwards',
-      });
-    });
-  }
-
   if (rows.length) selectRow(0, false);
 
   rows.forEach((row, index) => {
@@ -295,5 +261,4 @@
 
   systemMotion.addEventListener?.('change', syncAppearanceControls);
   syncAppearanceControls();
-  runEntranceSequence();
 })();
