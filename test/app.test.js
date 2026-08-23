@@ -9,6 +9,7 @@ const databasePath = path.join(os.tmpdir(), `local-tasks-${process.pid}-${Date.n
 process.env.DATABASE_PATH = databasePath;
 process.env.NTFY_TOPIC = 'local-tasks-test-topic';
 process.env.APP_TIMEZONE = 'Europe/Istanbul';
+delete process.env.HOST;
 
 let app;
 let dbModule;
@@ -178,7 +179,7 @@ test('due reminders are sent once and then marked', async () => {
   }
 });
 
-test('the configured web host is localhost only', async () => {
+test('the default web host is localhost only', async () => {
   const { config } = await import('../src/config.js');
   assert.equal(config.host, '127.0.0.1');
 });
@@ -186,5 +187,5 @@ test('the configured web host is localhost only', async () => {
 test('sağlık kontrolü veritabanı durumunu bildirir', async () => {
   const response = await request(app).get('/healthz').expect(200);
   assert.equal(response.body.status, 'ok');
-  assert.equal(response.body.service, 'todoslate');
+  assert.equal(response.body.service, 'gerit');
 });

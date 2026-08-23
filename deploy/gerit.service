@@ -1,15 +1,15 @@
 [Unit]
-Description=TodoSlate kişisel iş yöneticisi
+Description=Gerit kişisel iş yöneticisi
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=todoslate
-Group=todoslate
-WorkingDirectory=/opt/todoslate/current
+User=gerit
+Group=gerit
+WorkingDirectory=/opt/gerit/current
 Environment=NODE_ENV=production
-EnvironmentFile=/etc/todoslate/todoslate.env
+EnvironmentFile=/etc/gerit/gerit.env
 ExecStart=/usr/bin/node src/server.js
 Restart=on-failure
 RestartSec=5s
@@ -29,7 +29,7 @@ ProtectClock=true
 RestrictSUIDSGID=true
 LockPersonality=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-ReadWritePaths=/var/lib/todoslate
+ReadWritePaths=/var/lib/gerit
 
 [Install]
 WantedBy=multi-user.target

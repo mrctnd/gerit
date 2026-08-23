@@ -1,52 +1,99 @@
-# TodoSlate
+# Gerit
 
-TodoSlate, iş gününü hızlı ve sakin tutmak için geliştirilmiş Türkçe, klavye odaklı kişisel iş yöneticisidir. Hesap, telemetri, iş birliği veya çevrimdışı eşitleme içermez; tüm görev geçmişi tek bir SQLite dosyasında kalır.
+[Türkçe](README.md) · [English](README.en.md)
 
-## Öne çıkanlar
+[![Test](https://github.com/mrctnd/gerit/actions/workflows/ci.yml/badge.svg)](https://github.com/mrctnd/gerit/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/mrctnd/gerit?display_name=tag)](https://github.com/mrctnd/gerit/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-22%2B-3c873a.svg)](https://nodejs.org/)
 
-- `n` ile hızlı ekleme, `x` ile tamamlama, `/` ile arama
-- Türkçe doğal tarih: `yarın 16:00`, `cuma 09:30`, `25.08.2026 14:00`
+**Gerit**, işlerini hızlıca yakalayıp yerine getirmen için tasarlanmış Türkçe, klavye odaklı ve yerel öncelikli kişisel görev yöneticisidir. Hesap, telemetri, reklam, iş birliği veya çevrimdışı eşitleme yoktur. Bütün veriniz yedekleyebileceğiniz tek bir SQLite dosyasında kalır.
+
+Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
+
+## Neler sunuyor?
+
+- `n` ile yeni iş, `x` ile tamamlama, `/` ile arama
+- Türkçe ve İngilizce doğal tarih: `yarın 16:00`, `cuma 09:30`, `tomorrow 4pm`
 - Tek satırda proje ve öncelik: `#finans p1`
-- Türkçe tekrarlar: `her pazartesi,perşembe`, `her ayın 1’i`, `her iş günü`
+- Tekrarlar: `her pazartesi,perşembe`, `her ayın 1’i`, `every mon,thu` ve RRULE
 - Bugün, Yaklaşan, Gelen Kutusu, proje ve Tamamlananlar görünümleri
-- Geciken işler, günlük iş özeti ve tamamlanma sayacı
-- Tamamlanan işi yeniden açma ve açık işi kopyalama
-- Her iş için serbest metin notları
-- Dakikalık ntfy hatırlatmaları ve 07:00 günlük özeti
-- Herhangi bir terminalden `t add "..."` ile kayıt
-- Nginx, systemd, HTTPS ve otomatik SQLite yedekleriyle Linux VM dağıtım dosyaları
+- Geciken işleri Bugün görünümünün en üstünde kırmızı sabitleme
+- Serbest metin notları, görev kopyalama ve yeniden açma
+- ntfy ile zamanı gelen işler ve her sabah 07:00 günlük özet
+- Her terminalden `t add "..."` ile hızlı yakalama
+- Express + EJS + better-sqlite3; istemci çerçevesi ve bulut hesabı yok
 
-## Yerelde başlatma
+## En kolay kurulum: Docker
+
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) veya Docker Engine + Compose gerekir.
+
+```sh
+git clone https://github.com/mrctnd/gerit.git
+cd gerit
+docker compose up -d --build
+```
+
+Ardından [http://127.0.0.1:3030](http://127.0.0.1:3030) adresini açın. Docker içeride `0.0.0.0` dinlese de Compose portu yalnızca ana makinenin `127.0.0.1` adresine bağlar; uygulama yerel ağda kendiliğinden açılmaz.
+
+```sh
+docker compose logs -f gerit       # günlükler
+docker compose down                # durdur
+git pull --ff-only && docker compose up -d --build   # güncelle
+```
+
+## İndirilebilir sürüm paketi
+
+[Releases](https://github.com/mrctnd/gerit/releases) sayfasındaki Windows veya Linux paketini indirin ve arşivi açın. Node.js 22+ kurulu olmalıdır.
+
+Windows PowerShell:
+
+```powershell
+.\gerit\scripts\start.ps1
+```
+
+Linux:
+
+```sh
+chmod +x gerit/scripts/start.sh
+./gerit/scripts/start.sh
+```
+
+Paketler üretim bağımlılıklarını içerir; ilk açılışta `.env` ve veri klasörü otomatik hazırlanır.
+
+## Node.js ile kurulum
 
 Node.js 22 veya daha yenisi gerekir.
 
 ```sh
-npm install
+git clone https://github.com/mrctnd/gerit.git
+cd gerit
+npm ci
+npm run setup
 npm start
 ```
 
-Ardından [http://127.0.0.1:3030](http://127.0.0.1:3030) adresini açın. Uygulama güvenlik gereği yalnızca `127.0.0.1` adresini dinler.
-
-Kod üzerinde çalışırken otomatik yeniden başlatma için:
+Geliştirme sırasında otomatik yeniden başlatma:
 
 ```sh
 npm run dev
 ```
 
-## Hızlı ekleme örnekleri
+## Hızlı ekleme
 
 ```text
 Müşteri teklifini yarın 16:00 gönder #satış p1
 Haftalık raporu cuma 10:30 hazırla #yönetim p2
 Operasyon toplantısı her pazartesi,perşembe 09:00 #operasyon p2
 Faturaları her ayın 1’i kontrol et #finans p1
+call Sam tomorrow 4pm #home p2
 ```
 
 - `#proje` işi bir projeye bağlar.
-- `p1`, `p2`, `p3` öncelik belirler.
+- `p1`, `p2`, `p3` önceliği belirler.
 - Tarih verilmezse iş Gelen Kutusu'na düşer.
-- Bir işi açarak not, tarih, proje, öncelik veya RRULE düzenlenebilir.
-- Tekrarlanan bir iş tamamlandığında sıradaki tekrar otomatik oluşturulur.
+- İş ayrıntısından not, tarih, proje, öncelik ve RRULE düzenlenebilir.
+- Tekrarlanan iş tamamlandığında sıradaki oluşum otomatik oluşturulur.
 
 ## Klavye kısayolları
 
@@ -60,7 +107,7 @@ Faturaları her ayın 1’i kontrol et #finans p1
 
 ## Terminal komutu
 
-Bu klasörde bir kez:
+Kaynak kurulumunda bir kez:
 
 ```sh
 npm link
@@ -72,61 +119,67 @@ Sonrasında herhangi bir klasörden:
 t add "Raporu yarın 16:00 gönder #finans p2"
 ```
 
-Komut `.env` içindeki veritabanı yolunu kullanır ve web uygulaması kapalıyken de çalışır. Global bağlantıyı kaldırmak için `npm unlink -g todoslate` çalıştırılabilir.
+Komut web uygulamasıyla aynı `.env` ve SQLite dosyasını kullanır. Global bağlantıyı kaldırmak için `npm unlink -g gerit` çalıştırın.
 
 ## ntfy telefon bildirimleri
 
-1. Telefona ntfy uygulamasını kurun.
-2. Uzun ve tahmin edilemez bir konu adına abone olun.
-3. `.env.example` dosyasını `.env` adıyla kopyalayın.
-4. `.env` içinde aynı konuyu yazın:
+1. Telefona [ntfy Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy) veya [ntfy iOS](https://apps.apple.com/app/ntfy/id1625396347) uygulamasını kurun.
+2. Uzun ve tahmin edilmesi zor bir konu adına abone olun.
+3. `npm run setup` çalıştırın veya `.env.example` dosyasını `.env` olarak kopyalayın.
+4. `.env` içindeki konu adını yazın:
 
    ```dotenv
    NTFY_TOPIC=uzun-ve-gizli-konu-adiniz
    ```
 
-5. TodoSlate'i yeniden başlatın.
+5. Gerit'i yeniden başlatın.
 
-Uygulama her dakika zamanı gelen işleri kontrol eder ve saat 07:00'de günün özetini gönderir. Saat dilimi `APP_TIMEZONE` ile belirlenir. Varsayılan ntfy sunucusu `https://ntfy.sh` adresidir; konu adını bir parola gibi koruyun.
+Gerit her dakika zamanı gelen işleri kontrol eder ve saat 07:00'de günün listesini gönderir. Saat dilimini `APP_TIMEZONE`, sunucuyu `NTFY_SERVER` belirler. Herkese açık `ntfy.sh` kullanıyorsanız konu adını parola gibi koruyun.
 
-## Veritabanı ve yedek
+## Veriniz nerede?
 
-Yerel varsayılan veritabanı:
+Node.js kurulumunda varsayılan dosya:
 
 ```text
 data/tasks.sqlite3
 ```
 
-Kalıcı bütün görev verisi bu dosyadadır. `DATABASE_PATH` ile başka bir konum seçilebilir. Yerel elle yedek alırken uygulamayı durdurup dosyayı kopyalamak en güvenli yöntemdir.
+`DATABASE_PATH` ile başka bir konum seçebilirsiniz. Docker kurulumunda veriler `gerit_gerit-data` adlı kalıcı volume içindeki `/app/data/tasks.sqlite3` dosyasındadır:
 
-## Linux VM kurulumu
+```sh
+docker volume inspect gerit_gerit-data
+```
 
-Boş Ubuntu Server VM oluşturma, SSH sertleştirme, Node.js, GitHub Deploy Key, systemd, Nginx, HTTPS, Basic Auth, UFW, otomatik yedek, güncelleme ve geri dönüş adımlarının tamamı burada:
+Docker'da güvenli bir SQLite yedeği oluşturmak için:
 
-**[Linux VM kurulum kılavuzu](docs/LINUX_VM_KURULUMU.md)**
+```sh
+docker compose exec gerit sh -c 'sqlite3 /app/data/tasks.sqlite3 ".backup /app/data/tasks-backup.sqlite3"'
+docker compose cp gerit:/app/data/tasks-backup.sqlite3 ./tasks-backup.sqlite3
+```
 
-Hazır üretim dosyaları `deploy/` klasöründedir:
+Yedekleri aynı makine dışında da saklayın ve geri yükleme işlemini düzenli olarak deneyin.
 
-- `todoslate.service`: sertleştirilmiş systemd servisi
-- `nginx.conf`: localhost ters vekili ve Basic Auth
-- `backup.sh`: bütünlük kontrollü SQLite yedeği
-- `todoslate-backup.service` ve `.timer`: günlük otomatik yedek
+## Güvenlik ve ağ sınırı
 
-## Test
+Gerit'te kullanıcı hesabı yoktur. Varsayılan `HOST=127.0.0.1` ayarı uygulamayı yalnızca aynı bilgisayara açar. Uzak erişim gerekiyorsa Gerit portunu doğrudan internete açmayın; HTTPS ve kimlik doğrulama sağlayan bir ters vekil ile şirket VPN'i arkasında kullanın.
+
+VM kurulumu uygulama son hâline yaklaştığında yapılacaktır. Baştan sona Ubuntu, systemd, Nginx, HTTPS, Basic Auth, UFW, güncelleme, geri dönüş ve otomatik yedek adımları şimdiden [Linux VM kılavuzunda](docs/LINUX_VM_KURULUMU.md) tutuluyor.
+
+## Test ve kalite
 
 ```sh
 npm test
+npm run check
 ```
 
-Testler Türkçe ve İngilizce hızlı ekleme, tekrar kuralları, sunucu görünümleri, tamamlama/yeniden açma, arama, hatırlatıcılar, sağlık kontrolü ve yalnızca localhost bağlanmasını doğrular.
+GitHub Actions her push ve pull request'te testleri çalıştırır. `v*` etiketi gönderildiğinde Windows ve Linux paketleri oluşturulup GitHub Releases'a eklenir. Kullanıcıyı etkileyen değişiklikler [CHANGELOG.md](CHANGELOG.md) içinde sürümle birlikte güncellenir.
 
-## GitHub'a ilk gönderim
+## Katkı
 
-Bu proje kendi Git deposu olarak hazırlanmıştır. GitHub'da boş bir `todoslate` deposu oluşturduktan sonra:
+Hata bildirimleri ve pull request'ler açıktır. Başlamadan önce [katkı rehberini](CONTRIBUTING.md), [davranış kurallarını](CODE_OF_CONDUCT.md) ve hassas raporlar için [güvenlik politikasını](SECURITY.md) okuyun.
 
-```sh
-git remote add origin git@github.com:GITHUB_KULLANICISI/todoslate.git
-git push -u origin main
-```
+Gerit [MIT Lisansı](LICENSE) ile yayımlanır.
 
-`.env` ve SQLite veritabanı `.gitignore` ile dışarıda tutulur; gizli ntfy konusu GitHub'a gitmez.
+## Bilinçli kapsam sınırı
+
+Gerit tek kullanıcı ve yerel veri için tasarlanır. İş birliği, hesap sistemi, yerel mobil uygulama ve çevrimdışı eşitleme kapsam dışıdır. Telefona erişim ntfy bildirimleriyle sağlanır; bu bilinçli bir sadelik ve veri sahipliği tercihidir.

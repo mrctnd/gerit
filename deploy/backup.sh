@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-DATABASE_PATH="${DATABASE_PATH:-/var/lib/todoslate/tasks.sqlite3}"
-BACKUP_DIR="${BACKUP_DIR:-/var/backups/todoslate}"
+DATABASE_PATH="${DATABASE_PATH:-/var/lib/gerit/tasks.sqlite3}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/gerit}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-DESTINATION="${BACKUP_DIR}/todoslate-${STAMP}.sqlite3.gz"
+DESTINATION="${BACKUP_DIR}/gerit-${STAMP}.sqlite3.gz"
 
 umask 077
 mkdir -p -- "$BACKUP_DIR"
-TEMP_FILE="$(mktemp "${BACKUP_DIR}/.todoslate-${STAMP}.XXXXXX")"
+TEMP_FILE="$(mktemp "${BACKUP_DIR}/.gerit-${STAMP}.XXXXXX")"
 
 cleanup() {
   rm -f -- "$TEMP_FILE"
@@ -24,6 +24,6 @@ if [ "$(sqlite3 "$TEMP_FILE" 'PRAGMA quick_check;')" != "ok" ]; then
 fi
 
 gzip -9 -c -- "$TEMP_FILE" > "$DESTINATION"
-find "$BACKUP_DIR" -maxdepth 1 -type f -name 'todoslate-*.sqlite3.gz' -mtime "+${RETENTION_DAYS}" -delete
+find "$BACKUP_DIR" -maxdepth 1 -type f -name 'gerit-*.sqlite3.gz' -mtime "+${RETENTION_DAYS}" -delete
 
 echo "Yedek hazır: $DESTINATION"

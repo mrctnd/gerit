@@ -1,0 +1,52 @@
+name: Hata bildirimi
+description: Tekrar üretilebilen bir sorunu bildirin.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Gerçek görev verisi, `.env` içeriği veya ntfy konu adı paylaşmayın.
+  - type: input
+    id: version
+    attributes:
+      label: Gerit sürümü
+      placeholder: v0.1.0 veya commit kimliği
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Kurulum türü
+      options:
+        - Docker
+        - Node.js
+        - GitHub yayın paketi
+        - Linux VM
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Tekrar üretme adımları
+      placeholder: 1. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Beklenen davranış
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Gerçekleşen davranış ve güvenli günlük çıktısı
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: İşletim sistemi ve Node.js sürümü
+      placeholder: Ubuntu 24.04, Node.js 24.8.0
+    validations:
+      required: true

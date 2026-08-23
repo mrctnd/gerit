@@ -6,6 +6,8 @@ data/*.sqlite3
 data/*.sqlite3-*
 backups/
 coverage/
+dist/
+release/
 *.log
 npm-debug.log*
 .DS_Store

@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Paketle (${{ matrix.asset }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            asset: linux-x64
+          - os: windows-latest
+            asset: windows-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Üretim bağımlılıklarını kur
+        run: npm ci --omit=dev
+      - name: Linux paketini hazırla
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir -p release/gerit
+          cp -R bin public scripts src views node_modules release/gerit/
+          cp .env.example CHANGELOG.md LICENSE README.md README.en.md package.json package-lock.json release/gerit/
+          chmod +x release/gerit/scripts/start.sh
+          tar -czf "gerit-${GITHUB_REF_NAME}-linux-x64.tar.gz" -C release gerit
+      - name: Windows paketini hazırla
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release/gerit | Out-Null
+          Copy-Item bin,public,scripts,src,views,node_modules -Destination release/gerit -Recurse
+          Copy-Item .env.example,CHANGELOG.md,LICENSE,README.md,README.en.md,package.json,package-lock.json -Destination release/gerit
+          tar -a -c -f "gerit-$env:GITHUB_REF_NAME-windows-x64.zip" -C release gerit
+      - name: Paketi yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gerit-${{ matrix.asset }}
+          path: gerit-*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: GitHub yayını oluştur
+    if: github.event_name == 'push'
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Paketleri indir
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Yayını oluştur
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --verify-tag --generate-notes --title "Gerit ${GITHUB_REF_NAME}"

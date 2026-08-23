@@ -25,3 +25,5 @@ jobs:
         run: npm ci
       - name: Testleri çalıştır
         run: npm test
+      - name: Üretim bağımlılıklarını denetle
+        run: npm audit --omit=dev --audit-level=high

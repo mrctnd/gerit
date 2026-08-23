@@ -1,0 +1,30 @@
+name: Özellik isteği
+description: Gerit için yeni veya geliştirilmiş bir davranış önerin.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Hangi problemi çözmek istiyorsunuz?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Önerdiğiniz çözüm
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Düşündüğünüz alternatifler
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Kapsam kontrolü
+      options:
+        - label: Öneri kişisel/yerel görev yöneticisi kapsamıyla uyumludur.
+          required: true
+        - label: Öneri hesap, iş birliği veya çevrimdışı eşitleme gerektirmez.
+          required: true

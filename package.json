@@ -1,17 +1,47 @@
 {
-  "name": "todoslate",
-  "version": "1.1.0",
-  "private": true,
-  "description": "A Turkish, keyboard-first task manager for focused work.",
+  "name": "gerit",
+  "version": "0.1.0",
+  "description": "A Turkish, keyboard-first, local-first task manager for focused work.",
+  "license": "MIT",
+  "author": "Gerit contributors",
+  "homepage": "https://github.com/mrctnd/gerit#readme",
+  "bugs": {
+    "url": "https://github.com/mrctnd/gerit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrctnd/gerit.git"
+  },
+  "keywords": [
+    "task-manager",
+    "todo",
+    "local-first",
+    "sqlite",
+    "turkish",
+    "self-hosted"
+  ],
+  "files": [
+    "bin",
+    "public",
+    "scripts",
+    "src",
+    "views",
+    ".env.example",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.en.md"
+  ],
   "type": "module",
   "bin": {
     "t": "./bin/t.js",
-    "todoslate": "./bin/t.js"
+    "gerit": "./bin/t.js"
   },
   "scripts": {
+    "setup": "node scripts/setup.js",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test --test-concurrency=1"
+    "test": "node --test --test-concurrency=1",
+    "check": "npm test && npm audit --omit=dev"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
@@ -27,6 +57,7 @@
     "supertest": "7.2.2"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "npm": ">=10"
   }
 }

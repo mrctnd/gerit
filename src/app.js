@@ -51,9 +51,9 @@ export function createApp() {
   app.get('/healthz', (_req, res) => {
     try {
       healthCheck();
-      res.json({ status: 'ok', service: 'todoslate', timestamp: new Date().toISOString() });
+      res.json({ status: 'ok', service: 'gerit', timestamp: new Date().toISOString() });
     } catch {
-      res.status(503).json({ status: 'error', service: 'todoslate' });
+      res.status(503).json({ status: 'error', service: 'gerit' });
     }
   });
 

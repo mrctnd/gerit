@@ -4,7 +4,7 @@ import { startReminders } from './reminders.js';
 
 const app = createApp();
 const server = app.listen(config.port, config.host, () => {
-  console.log(`TodoSlate hazır: http://${config.host}:${config.port}`);
+  console.log(`Gerit hazır: http://${config.host}:${config.port}`);
   console.log(`Veritabanı: ${config.databasePath}`);
 });
 

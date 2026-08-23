@@ -63,7 +63,7 @@ export async function sendMorningDigest(reference = now()) {
   if (!lines.length) lines.push('Bugün için planlanmış iş yok. Günün açık.');
 
   await publish({
-    title: `TodoSlate · ${digestDate(reference)} · ${tasks.length} iş`,
+    title: `Gerit · ${digestDate(reference)} · ${tasks.length} iş`,
     message: lines.join('\n'),
     priority: '3',
     tags: 'sunrise,clipboard',

@@ -9,7 +9,7 @@ dotenv.config({ path: path.join(appRoot, '.env'), quiet: true });
 const configuredDatabase = process.env.DATABASE_PATH || './data/tasks.sqlite3';
 
 export const config = {
-  host: '127.0.0.1',
+  host: process.env.HOST?.trim() || '127.0.0.1',
   port: Number.parseInt(process.env.PORT || '3030', 10),
   timezone: process.env.APP_TIMEZONE || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   databasePath: path.isAbsolute(configuredDatabase)

@@ -1,0 +1,23 @@
+name: gerit
+
+services:
+  gerit:
+    build:
+      context: .
+    image: gerit:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${GERIT_PORT:-3030}:3030"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3030
+      NODE_ENV: production
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Istanbul}
+      DATABASE_PATH: /app/data/tasks.sqlite3
+      NTFY_TOPIC: ${NTFY_TOPIC:-}
+      NTFY_SERVER: ${NTFY_SERVER:-https://ntfy.sh}
+    volumes:
+      - gerit-data:/app/data
+
+volumes:
+  gerit-data:
