@@ -24,9 +24,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Kodu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Node.js kur
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -50,7 +50,7 @@ jobs:
           Copy-Item .env.example,CHANGELOG.md,LICENSE,README.md,README.en.md,package.json,package-lock.json -Destination release/gerit
           tar -a -c -f "gerit-$env:GITHUB_REF_NAME-windows-x64.zip" -C release gerit
       - name: Paketi yükle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: gerit-${{ matrix.asset }}
           path: gerit-*
@@ -65,7 +65,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Paketleri indir
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           path: dist
           merge-multiple: true

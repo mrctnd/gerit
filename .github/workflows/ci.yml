@@ -15,9 +15,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Kodu al
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Node.js kur
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: npm
