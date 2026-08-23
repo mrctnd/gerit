@@ -1,19 +1,23 @@
 <!doctype html>
-<html lang="tr">
+<html lang="tr" data-theme="atlas" data-font="modern" data-motion="system">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="İşlerini hızlı, sade ve güvenli biçimde yöneten kişisel görev merkezi.">
     <meta name="theme-color" content="#102a43">
     <title><%= view.title %> · Gerit</title>
+    <link rel="icon" type="image/png" href="/brand/gerit-mark.png">
+    <link rel="apple-touch-icon" href="/brand/gerit-mark.png">
+    <script src="/preferences.js"></script>
     <link rel="stylesheet" href="/styles.css">
     <script src="/app.js" defer></script>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Ana içeriğe geç</a>
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="/today" aria-label="Gerit ana sayfa">
-          <span class="brand-mark" aria-hidden="true">G</span>
+          <span class="brand-mark" aria-hidden="true"><img src="/brand/gerit-mark.png" alt=""></span>
           <span>
             <strong>Gerit</strong>
             <small>işlerini yerine getir</small>
@@ -67,25 +71,31 @@
           <p>Klavye ile hızlan</p>
           <div><span><kbd>N</kbd> Yeni iş</span><span><kbd>/</kbd> Arama</span></div>
           <div><span><kbd>X</kbd> Tamamla</span><span><kbd>J K</kbd> Gezin</span></div>
+          <div><span><kbd>G</kbd> Görünüm</span><span>Yerel tercih</span></div>
         </div>
       </aside>
 
-      <main class="main-content">
+      <main class="main-content" id="main-content">
         <header class="topbar">
-          <a class="mobile-brand" href="/today" aria-label="Gerit ana sayfa"><span>G</span> Gerit</a>
+          <a class="mobile-brand" href="/today" aria-label="Gerit ana sayfa"><span><img src="/brand/gerit-mark.png" alt=""></span> Gerit</a>
           <form class="search-form" action="/search" method="get" role="search">
             <label class="sr-only" for="global-search">İşlerde ara</label>
             <span class="search-icon" aria-hidden="true"></span>
             <input id="global-search" name="q" type="search" value="<%= view.searchQuery || '' %>" placeholder="İşlerde ara" autocomplete="off">
             <kbd>/</kbd>
           </form>
+          <button class="appearance-trigger" id="appearance-trigger" type="button" aria-haspopup="dialog" aria-controls="appearance-dialog">
+            <span class="appearance-trigger-icon" aria-hidden="true"></span>
+            <span class="appearance-trigger-label">Görünüm</span>
+            <kbd>G</kbd>
+          </button>
           <div class="local-badge" title="Şirket ağına özel çalışma alanı">
             <span aria-hidden="true"></span> Şirket içi
           </div>
         </header>
 
         <div class="page-wrap">
-          <section class="page-heading">
+          <section class="page-heading" data-entrance>
             <div>
               <p class="eyebrow"><%= view.kicker %></p>
               <h1><%= view.title %></h1>
@@ -96,7 +106,7 @@
           </section>
 
           <% if (currentPath === '/today') { %>
-            <section class="work-summary" aria-label="Günün iş özeti">
+            <section class="work-summary" aria-label="Günün iş özeti" data-entrance-group>
               <article>
                 <span>Açık işler</span>
                 <strong><%= summary.open %></strong>
@@ -121,7 +131,7 @@
           <% } %>
 
           <% if (view.kind !== 'edit' && view.kind !== 'message') { %>
-            <section class="quick-add-card" aria-labelledby="quick-add-title">
+            <section class="quick-add-card" aria-labelledby="quick-add-title" data-entrance>
               <form action="/tasks" method="post" id="quick-add-form">
                 <input type="hidden" name="returnTo" value="<%= returnPath %>">
                 <div class="quick-add-main">
@@ -148,7 +158,7 @@
             </section>
           <% } %>
 
-          <section class="task-surface" aria-live="polite">
+          <section class="task-surface" aria-live="polite" data-entrance-group>
             <% if (view.kind === 'edit') { %>
               <%- include('partials/edit-task', { task: view.task, returnTo: view.returnTo }) %>
             <% } else { %>
@@ -191,5 +201,77 @@
         </footer>
       </main>
     </div>
+
+    <dialog class="appearance-dialog" id="appearance-dialog" aria-labelledby="appearance-title">
+      <div class="appearance-panel">
+        <header class="appearance-header">
+          <div>
+            <p class="eyebrow">Kişiselleştir</p>
+            <h2 id="appearance-title">Gerit senin gibi çalışsın</h2>
+          </div>
+          <button class="appearance-close" type="button" data-close-appearance aria-label="Görünüm ayarlarını kapat">×</button>
+        </header>
+
+        <section class="appearance-section" aria-labelledby="palette-title">
+          <div class="appearance-section-heading">
+            <h3 id="palette-title">Renk paleti</h3>
+            <span>Dört dengeli çalışma modu</span>
+          </div>
+          <div class="palette-grid" role="group" aria-label="Renk paleti seçimi">
+            <button class="palette-option" type="button" data-theme-option="atlas" aria-pressed="true">
+              <span class="palette-preview palette-atlas" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span><strong>Atlas</strong><small>Lacivert · Turkuaz</small></span>
+              <b aria-hidden="true">✓</b>
+            </button>
+            <button class="palette-option" type="button" data-theme-option="forest" aria-pressed="false">
+              <span class="palette-preview palette-forest" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span><strong>Orman</strong><small>Çam · Nane</small></span>
+              <b aria-hidden="true">✓</b>
+            </button>
+            <button class="palette-option" type="button" data-theme-option="violet" aria-pressed="false">
+              <span class="palette-preview palette-violet" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span><strong>Lavanta</strong><small>Mürdüm · Leylak</small></span>
+              <b aria-hidden="true">✓</b>
+            </button>
+            <button class="palette-option" type="button" data-theme-option="ember" aria-pressed="false">
+              <span class="palette-preview palette-ember" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span><strong>Kehribar</strong><small>Kömür · Mercan</small></span>
+              <b aria-hidden="true">✓</b>
+            </button>
+          </div>
+        </section>
+
+        <section class="appearance-section" aria-labelledby="font-title">
+          <div class="appearance-section-heading">
+            <h3 id="font-title">Yazı karakteri</h3>
+            <span>Dış bağlantı gerektirmeyen yerel font setleri</span>
+          </div>
+          <div class="font-grid" role="group" aria-label="Yazı karakteri seçimi">
+            <button class="font-option" type="button" data-font-option="modern" aria-pressed="true"><b>Aa</b><span>Modern</span><small>Temiz ve dengeli</small></button>
+            <button class="font-option" type="button" data-font-option="humanist" aria-pressed="false"><b>Aa</b><span>Humanist</span><small>Sıcak ve okunaklı</small></button>
+            <button class="font-option" type="button" data-font-option="editorial" aria-pressed="false"><b>Aa</b><span>Editoryal</span><small>Klasik ve ciddi</small></button>
+            <button class="font-option" type="button" data-font-option="mono" aria-pressed="false"><b>Aa</b><span>Teknik</span><small>Keskin ve ritmik</small></button>
+          </div>
+        </section>
+
+        <section class="appearance-section motion-section" aria-labelledby="motion-title">
+          <div class="appearance-section-heading">
+            <h3 id="motion-title">Hareket</h3>
+            <span>Geçiş yoğunluğunu seç</span>
+          </div>
+          <div class="motion-options" role="group" aria-label="Hareket tercihi">
+            <button type="button" data-motion-option="system" aria-pressed="true">Sistemi izle</button>
+            <button type="button" data-motion-option="full" aria-pressed="false">Akıcı</button>
+            <button type="button" data-motion-option="reduced" aria-pressed="false">Sakin</button>
+          </div>
+        </section>
+
+        <footer class="appearance-footer">
+          <p><span aria-hidden="true">●</span> Tercihler yalnızca bu tarayıcıda saklanır.</p>
+          <button type="button" class="reset-appearance" data-reset-appearance>Varsayılana dön</button>
+        </footer>
+      </div>
+    </dialog>
+    <p class="sr-only" id="appearance-status" role="status" aria-live="polite"></p>
   </body>
 </html>

@@ -1,0 +1,21 @@
+:root {
+  --gerit-navy: #082b64;
+  --gerit-teal: #08d8cf;
+  --gerit-amber: #ffb62a;
+  --gerit-ice: #f7fbff;
+}
+
+.gerit-logo-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65em;
+  color: var(--gerit-navy);
+  font: 800 1rem/1 Inter, "Segoe UI Variable", "Segoe UI", sans-serif;
+  letter-spacing: -0.035em;
+}
+
+.gerit-logo-lockup img {
+  width: 2.25em;
+  height: 2.25em;
+  object-fit: contain;
+}

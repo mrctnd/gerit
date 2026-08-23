@@ -190,3 +190,20 @@ test('sağlık kontrolü veritabanı durumunu bildirir', async () => {
   assert.equal(response.body.status, 'ok');
   assert.equal(response.body.service, 'gerit');
 });
+
+test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async () => {
+  const response = await request(app).get('/today').expect(200);
+
+  assert.match(response.text, /id="appearance-dialog"/);
+  assert.match(response.text, /data-theme-option="forest"/);
+  assert.match(response.text, /data-font-option="editorial"/);
+  assert.match(response.text, /data-motion-option="reduced"/);
+  assert.match(response.text, /src="\/preferences\.js"/);
+});
+
+test('Gerit logosu uygulamanın kendi statik dosyası olarak sunulur', async () => {
+  const response = await request(app).get('/brand/gerit-mark.png').expect(200);
+
+  assert.match(response.headers['content-type'], /^image\/png/);
+  assert.ok(response.body.length > 100_000);
+});

@@ -2,6 +2,21 @@
 
 Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı etkileyen değişiklikler bu dosyada tutulur.
 
+## [Yayımlanmadı]
+
+### Eklendi
+
+- Atlas, Orman, Lavanta ve Kehribar renk paletleri.
+- Modern, Humanist, Editoryal ve Teknik yerel font setleri.
+- Sistem, akıcı ve sakin hareket tercihleriyle sayfa ve görev mikro etkileşimleri.
+- Gerit ana işareti, küçük boyut varyantı ve açık kaynak marka kullanım paketi.
+
+### Değişti
+
+- Üst çubuk, görev kartları, hızlı ekleme ve mobil görünüm yeni tasarım sistemiyle iyileştirildi.
+- Görünüm tercihleri yalnızca tarayıcının yerel depolamasında saklanıyor.
+- Sayfa geçişleri tek katmanlı ve daha kısa bir hareket ritmine sadeleştirildi.
+
 ## [0.1.0] - 2026-08-23
 
 ### Eklendi

@@ -1,5 +1,9 @@
 # Gerit
 
+<p align="center">
+  <img src="public/brand/gerit-mark.png" alt="Gerit logo" width="116">
+</p>
+
 [Türkçe](README.md) · [English](README.en.md)
 
 [![Test](https://github.com/mrctnd/gerit/actions/workflows/ci.yml/badge.svg)](https://github.com/mrctnd/gerit/actions/workflows/ci.yml)
@@ -19,6 +23,8 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - Recurrence from Turkish/English phrases or standard RRULE strings
 - Today, Upcoming, Inbox, project, and Completed views
 - Overdue tasks pinned in red at the top of Today
+- Four color palettes, four local font sets, and device-local appearance preferences
+- Smooth page transitions, completion feedback, and a reduced-motion mode
 - ntfy due reminders and a daily 07:00 digest
 - Terminal capture with `t add "..."`
 - Server-rendered Express + EJS UI and a single better-sqlite3 database
@@ -72,6 +78,12 @@ water plants every mon,thu 9am #home p3
 ```
 
 Tasks without a date go to Inbox. Completing a recurring task creates the next occurrence automatically.
+
+## Personalize the interface
+
+Use the **Görünüm** button in the top bar or press `g`. Choose between Atlas, Forest, Violet, and Ember palettes; Modern, Humanist, Editorial, and Technical font sets; and system, full, or reduced motion.
+
+These preferences remain in the browser's local storage and are never sent to the database or an external service. Logo assets and usage guidance live in [`public/brand`](public/brand/README.md).
 
 ## ntfy phone setup
 

@@ -1,5 +1,9 @@
 # Gerit
 
+<p align="center">
+  <img src="public/brand/gerit-mark.png" alt="Gerit logosu" width="116">
+</p>
+
 [Türkçe](README.md) · [English](README.en.md)
 
 [![Test](https://github.com/mrctnd/gerit/actions/workflows/ci.yml/badge.svg)](https://github.com/mrctnd/gerit/actions/workflows/ci.yml)
@@ -20,6 +24,8 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Bugün, Yaklaşan, Gelen Kutusu, proje ve Tamamlananlar görünümleri
 - Geciken işleri Bugün görünümünün en üstünde kırmızı sabitleme
 - Serbest metin notları, görev kopyalama ve yeniden açma
+- Dört renk paleti, dört yerel font seti ve cihazda saklanan görünüm tercihleri
+- Akıcı sayfa geçişleri, görev tamamlama geri bildirimi ve azaltılmış hareket modu
 - ntfy ile zamanı gelen işler ve her sabah 07:00 günlük özet
 - Her terminalden `t add "..."` ile hızlı yakalama
 - Express + EJS + better-sqlite3; istemci çerçevesi ve bulut hesabı yok
@@ -103,7 +109,14 @@ call Sam tomorrow 4pm #home p2
 | `/` | Aramaya geç |
 | `x` | Seçili işi tamamla |
 | `j` / `k` veya oklar | İşler arasında gezin |
+| `g` | Görünüm panelini aç |
 | `Esc` | Aktif alandan çık |
+
+## Görünümü kişiselleştirme
+
+Üst çubuktaki **Görünüm** düğmesini veya `g` kısayolunu kullanın. Atlas, Orman, Lavanta ve Kehribar paletleri; Modern, Humanist, Editoryal ve Teknik font setleri arasından seçim yapabilirsiniz. Hareket ayarı sistem tercihini izleyebilir, akıcı geçişleri zorlayabilir veya animasyonları sakinleştirebilir.
+
+Bu tercihler yalnızca tarayıcının yerel depolamasında tutulur; veritabanına ya da bir dış servise gönderilmez. Logo dosyaları ve kullanım notları [`public/brand`](public/brand/README.md) klasöründedir.
 
 ## Terminal komutu
 
