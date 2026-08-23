@@ -35,6 +35,7 @@ import { describeRecurrence, parseRecurrence } from './recurrence.js';
 
 export function createApp() {
   const app = express();
+  const assetVersion = Date.now().toString(36);
   app.disable('x-powered-by');
   app.set('view engine', 'ejs');
   app.set('views', path.join(appRoot, 'views'));
@@ -46,7 +47,15 @@ export function createApp() {
     next();
   });
   app.use(express.urlencoded({ extended: false, limit: '64kb' }));
-  app.use(express.static(path.join(appRoot, 'public'), { maxAge: '1h', etag: true }));
+  app.use(express.static(path.join(appRoot, 'public'), {
+    maxAge: 0,
+    etag: true,
+    setHeaders(res, filePath) {
+      if (['.js', '.css'].includes(path.extname(filePath).toLowerCase())) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  }));
 
   app.get('/healthz', (_req, res) => {
     try {
@@ -66,6 +75,7 @@ export function createApp() {
     res.locals.currentPath = req.path;
     res.locals.returnPath = req.originalUrl;
     res.locals.config = { timezone: config.timezone };
+    res.locals.assetVersion = assetVersion;
     res.locals.encodeURIComponent = encodeURIComponent;
     res.locals.toDateTimeInput = toDateTimeInput;
     res.locals.describeRecurrence = describeRecurrence;

@@ -198,7 +198,7 @@ test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async
   assert.match(response.text, /data-theme-option="forest"/);
   assert.match(response.text, /data-font-option="editorial"/);
   assert.match(response.text, /data-motion-option="reduced"/);
-  assert.match(response.text, /src="\/preferences\.js"/);
+  assert.match(response.text, /src="\/preferences\.js\?v=[^"]+"/);
 });
 
 test('Gerit logosu uygulamanın kendi statik dosyası olarak sunulur', async () => {
@@ -212,4 +212,10 @@ test('görünüm değişimleri gecikmeli sayfa giriş animasyonu çalıştırmaz
   const clientScript = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 
   assert.doesNotMatch(clientScript, /runEntranceSequence|page-transition|window\.location\.assign/);
+});
+
+test('arayüz dosyaları eski animasyon kodunu önbellekten kullanmaz', async () => {
+  const response = await request(app).get('/app.js').expect(200);
+
+  assert.match(response.headers['cache-control'], /no-cache/);
 });
