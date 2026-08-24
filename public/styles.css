@@ -460,7 +460,7 @@ h1 {
 
 .work-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin: -3px 0 22px;
 }
@@ -525,6 +525,8 @@ h1 {
 .work-summary .summary-danger::after { background: rgba(195, 60, 60, 0.08); }
 .work-summary .summary-success strong { color: #218563; }
 .work-summary .summary-success::after { background: rgba(45, 157, 120, 0.09); }
+.work-summary .summary-active strong { color: #2d759b; }
+.work-summary .summary-active::after { background: rgba(45, 117, 155, 0.09); }
 
 .page-hint {
   margin: 0 0 4px;
@@ -640,7 +642,8 @@ h1 {
   letter-spacing: 0.08em;
 }
 
-.quick-detail-grid input {
+.quick-detail-grid input,
+.quick-detail-grid select {
   width: 100%;
   height: 39px;
   padding: 0 11px;
@@ -900,6 +903,76 @@ h1 {
   background: #f0ecf7;
 }
 
+.status-chip {
+  color: #52616b;
+  background: #edf1f3;
+}
+
+.status-active {
+  color: #266d8c;
+  background: #e3f1f7;
+}
+
+.status-waiting {
+  color: #8c671d;
+  background: #f7edda;
+}
+
+.status-blocked {
+  color: #a23f39;
+  background: #f7dfdc;
+}
+
+.status-completed {
+  color: #247d61;
+  background: #e5f5ef;
+}
+
+.reminder-chip {
+  color: #6c5794;
+  background: #f1ebf8;
+}
+
+.row-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(210px, 100%);
+  margin-top: 2px;
+  color: #718078;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.row-progress progress,
+.task-health progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  appearance: none;
+  background: #e8ece8;
+  border: 0;
+  border-radius: 999px;
+}
+
+.row-progress progress::-webkit-progress-bar,
+.task-health progress::-webkit-progress-bar {
+  background: #e8ece8;
+  border-radius: 999px;
+}
+
+.row-progress progress::-webkit-progress-value,
+.task-health progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+  border-radius: 999px;
+}
+
+.row-progress progress::-moz-progress-bar,
+.task-health progress::-moz-progress-bar {
+  background: var(--accent-dark);
+  border-radius: 999px;
+}
+
 .completed-chip {
   color: #247d61;
   background: #e5f5ef;
@@ -993,6 +1066,43 @@ h1 {
   font-size: 12px;
 }
 
+.task-health {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 1.35fr);
+  align-items: center;
+  gap: 22px;
+  margin: -5px -5px 23px;
+  padding: 15px 17px;
+  background: color-mix(in srgb, var(--paper) 72%, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.task-health > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-health .status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.task-health strong {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.task-health progress {
+  height: 9px;
+}
+
 .edit-form,
 .field {
   display: grid;
@@ -1055,6 +1165,26 @@ h1 {
   color: #8a938f;
   font-size: 10px;
   font-weight: 500;
+}
+
+.progress-field > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progress-field output {
+  color: var(--accent-strong);
+  font-weight: 850;
+}
+
+.field input[type="range"] {
+  height: 28px;
+  padding: 0;
+  accent-color: var(--accent-dark);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .form-grid {
@@ -1163,6 +1293,108 @@ h1 {
   color: #ae4540;
 }
 
+.activity-section {
+  margin-top: 30px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.activity-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.activity-heading .eyebrow {
+  margin-bottom: 4px;
+}
+
+.activity-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 23px;
+  letter-spacing: -0.035em;
+}
+
+.activity-heading > span {
+  padding: 5px 8px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--paper) 72%, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.note-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 10px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--paper) 58%, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.note-form textarea {
+  min-height: 78px;
+}
+
+.note-form .primary-button {
+  padding: 0 14px;
+}
+
+.note-timeline {
+  display: grid;
+  gap: 0;
+  margin-top: 20px;
+  padding-left: 9px;
+}
+
+.note-timeline article {
+  position: relative;
+  padding: 0 0 21px 22px;
+  border-left: 1px solid var(--line);
+}
+
+.note-timeline article::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--accent-dark);
+}
+
+.note-timeline time {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.note-timeline p {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.activity-empty {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .app-footer {
   display: flex;
   justify-content: space-between;
@@ -1213,7 +1445,7 @@ h1 {
   }
 
   .primary-nav {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 7px;
   }
 
@@ -1223,7 +1455,7 @@ h1 {
     min-height: 39px;
     gap: 7px;
     padding: 0 8px;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .main-content {
@@ -1332,6 +1564,11 @@ h1 {
 
   .quick-detail-grid,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-health,
+  .note-form {
     grid-template-columns: 1fr;
   }
 
@@ -1509,6 +1746,7 @@ body {
 .field textarea:focus,
 .field select:focus,
 .quick-detail-grid input:focus,
+.quick-detail-grid select:focus,
 .input-prefix:focus-within {
   background: var(--panel);
   border-color: var(--accent-dark);
@@ -1649,7 +1887,8 @@ body {
 .field textarea,
 .field select,
 .input-prefix,
-.quick-detail-grid input {
+.quick-detail-grid input,
+.quick-detail-grid select {
   color: var(--ink);
   background: color-mix(in srgb, var(--paper) 70%, var(--panel));
   border-color: var(--line);

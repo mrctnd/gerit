@@ -3,6 +3,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import { config } from './config.js';
 import { nextOccurrence } from './recurrence.js';
+import { normalizeProgress, normalizeTaskStatus } from './workflow.js';
 
 fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -19,6 +20,10 @@ db.exec(`
     priority INTEGER CHECK (priority IS NULL OR priority BETWEEN 1 AND 3),
     due_at TEXT,
     recurrence TEXT,
+    status TEXT NOT NULL DEFAULT 'planned',
+    progress INTEGER NOT NULL DEFAULT 0,
+    reminder_at TEXT,
+    reminder_sent_at TEXT,
     reminded_at TEXT,
     completed_at TEXT,
     created_at TEXT NOT NULL,
@@ -33,17 +38,56 @@ db.exec(`
   ON tasks(project)
   WHERE completed_at IS NULL;
 `);
+
+ensureColumn('tasks', 'status', "TEXT NOT NULL DEFAULT 'planned'");
+ensureColumn('tasks', 'progress', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('tasks', 'reminder_at', 'TEXT');
+ensureColumn('tasks', 'reminder_sent_at', 'TEXT');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS task_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_task_notes_task_created
+  ON task_notes(task_id, created_at DESC);
+
+  CREATE INDEX IF NOT EXISTS idx_tasks_custom_reminder
+  ON tasks(reminder_at)
+  WHERE completed_at IS NULL AND reminder_sent_at IS NULL;
+
+  UPDATE tasks
+  SET status = 'completed', progress = 100
+  WHERE completed_at IS NOT NULL AND (status <> 'completed' OR progress <> 100);
+`);
 db.pragma('optimize');
+
+function ensureColumn(table, column, definition) {
+  const columns = db.pragma(`table_info(${table})`);
+  if (!columns.some((item) => item.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
 
 const selectColumns = `
   id, title, notes, project, priority, due_at AS dueAt,
-  recurrence, reminded_at AS remindedAt, completed_at AS completedAt,
+  recurrence, status, progress, reminder_at AS reminderAt,
+  reminder_sent_at AS reminderSentAt, reminded_at AS remindedAt, completed_at AS completedAt,
   created_at AS createdAt, updated_at AS updatedAt
 `;
 
 const insertStatement = db.prepare(`
-  INSERT INTO tasks (title, notes, project, priority, due_at, recurrence, created_at, updated_at)
-  VALUES (@title, @notes, @project, @priority, @dueAt, @recurrence, @createdAt, @updatedAt)
+  INSERT INTO tasks (
+    title, notes, project, priority, due_at, recurrence, status, progress,
+    reminder_at, created_at, updated_at
+  )
+  VALUES (
+    @title, @notes, @project, @priority, @dueAt, @recurrence, @status, @progress,
+    @reminderAt, @createdAt, @updatedAt
+  )
 `);
 
 export function addTask(task) {
@@ -55,6 +99,9 @@ export function addTask(task) {
     priority: task.priority ? Number(task.priority) : null,
     dueAt: task.dueAt || null,
     recurrence: task.recurrence || null,
+    status: normalizeTaskStatus(task.status),
+    progress: normalizeProgress(task.progress),
+    reminderAt: task.reminderAt || null,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -69,6 +116,8 @@ export function getTask(id) {
 }
 
 export function updateTask(id, task) {
+  const existing = getTask(id);
+  if (!existing) return null;
   const timestamp = new Date().toISOString();
   const title = task.title.trim();
   if (!title) throw new Error('İş başlığı gerekli.');
@@ -80,6 +129,10 @@ export function updateTask(id, task) {
         priority = @priority,
         due_at = @dueAt,
         recurrence = @recurrence,
+        status = @status,
+        progress = @progress,
+        reminder_at = @reminderAt,
+        reminder_sent_at = CASE WHEN reminder_at IS @reminderAt THEN reminder_sent_at ELSE NULL END,
         reminded_at = CASE WHEN due_at IS @dueAt THEN reminded_at ELSE NULL END,
         updated_at = @updatedAt
     WHERE id = @id
@@ -91,6 +144,9 @@ export function updateTask(id, task) {
     priority: task.priority ? Number(task.priority) : null,
     dueAt: task.dueAt || null,
     recurrence: task.recurrence || null,
+    status: normalizeTaskStatus(task.status, Boolean(existing.completedAt)),
+    progress: existing.completedAt ? 100 : normalizeProgress(task.progress, existing.progress),
+    reminderAt: task.reminderAt || null,
     updatedAt: timestamp,
   });
   return getTask(id);
@@ -101,7 +157,7 @@ export const completeTask = db.transaction((id) => {
   if (!task) return null;
 
   const completedAt = new Date().toISOString();
-  db.prepare('UPDATE tasks SET completed_at = ?, updated_at = ? WHERE id = ?')
+  db.prepare("UPDATE tasks SET completed_at = ?, status = 'completed', progress = 100, updated_at = ? WHERE id = ?")
     .run(completedAt, completedAt, id);
 
   let nextTask = null;
@@ -116,6 +172,9 @@ export const completeTask = db.transaction((id) => {
         priority: task.priority,
         dueAt: nextDue.toISOString(),
         recurrence: task.recurrence,
+        status: 'planned',
+        progress: 0,
+        reminderAt: nextReminderAt(task, nextDue),
       });
     }
   }
@@ -131,7 +190,8 @@ export function reopenTask(id) {
   const timestamp = new Date().toISOString();
   const result = db.prepare(`
     UPDATE tasks
-    SET completed_at = NULL, reminded_at = NULL, updated_at = ?
+    SET completed_at = NULL, status = 'in_progress', progress = 90,
+        reminded_at = NULL, reminder_sent_at = NULL, updated_at = ?
     WHERE id = ? AND completed_at IS NOT NULL
   `).run(timestamp, id);
   return result.changes ? getTask(id) : null;
@@ -147,6 +207,9 @@ export function duplicateTask(id) {
     priority: task.priority,
     dueAt: task.dueAt,
     recurrence: task.recurrence,
+    status: task.completedAt ? 'planned' : task.status,
+    progress: task.completedAt ? 0 : task.progress,
+    reminderAt: task.reminderAt,
   });
 }
 
@@ -188,6 +251,22 @@ export function getProjectTasks(project) {
   `).all(project);
 }
 
+export function getWorkflowTasks() {
+  return db.prepare(`
+    SELECT ${selectColumns}
+    FROM tasks
+    WHERE completed_at IS NULL
+    ORDER BY CASE status
+      WHEN 'in_progress' THEN 0
+      WHEN 'blocked' THEN 1
+      WHEN 'waiting' THEN 2
+      ELSE 3
+    END,
+    CASE WHEN due_at IS NULL THEN 1 ELSE 0 END, due_at ASC,
+    CASE WHEN priority IS NULL THEN 1 ELSE 0 END, priority ASC, created_at ASC
+  `).all();
+}
+
 export function getCompletedTasks(limit = 100) {
   return db.prepare(`
     SELECT ${selectColumns}
@@ -204,11 +283,17 @@ export function searchTasks(query) {
     SELECT ${selectColumns}
     FROM tasks
     WHERE completed_at IS NULL
-      AND (title LIKE ? ESCAPE '\\' OR notes LIKE ? ESCAPE '\\' OR project LIKE ? ESCAPE '\\')
+      AND (
+        title LIKE ? ESCAPE '\\' OR notes LIKE ? ESCAPE '\\' OR project LIKE ? ESCAPE '\\'
+        OR EXISTS (
+          SELECT 1 FROM task_notes
+          WHERE task_notes.task_id = tasks.id AND task_notes.content LIKE ? ESCAPE '\\'
+        )
+      )
     ORDER BY CASE WHEN due_at IS NULL THEN 1 ELSE 0 END, due_at ASC,
       CASE WHEN priority IS NULL THEN 1 ELSE 0 END, priority ASC
     LIMIT 100
-  `).all(needle, needle, needle);
+  `).all(needle, needle, needle, needle);
 }
 
 export function getProjects() {
@@ -239,6 +324,10 @@ export function getCounts(start, end) {
       SELECT COUNT(*) AS count FROM tasks
       WHERE completed_at IS NOT NULL
     `).get().count,
+    workflow: db.prepare(`
+      SELECT COUNT(*) AS count FROM tasks
+      WHERE completed_at IS NULL AND status = 'in_progress'
+    `).get().count,
   };
 }
 
@@ -260,6 +349,14 @@ export function getWorkSummary(start, end, reference) {
       SELECT COUNT(*) AS count FROM tasks
       WHERE completed_at IS NOT NULL AND completed_at >= ? AND completed_at < ?
     `).get(start, end).count,
+    inProgress: db.prepare(`
+      SELECT COUNT(*) AS count FROM tasks
+      WHERE completed_at IS NULL AND status = 'in_progress'
+    `).get().count,
+    blocked: db.prepare(`
+      SELECT COUNT(*) AS count FROM tasks
+      WHERE completed_at IS NULL AND status = 'blocked'
+    `).get().count,
   };
 }
 
@@ -280,4 +377,53 @@ export function getDueForReminder(nowIso) {
 export function markReminded(id, timestamp = new Date().toISOString()) {
   db.prepare('UPDATE tasks SET reminded_at = ?, updated_at = ? WHERE id = ?')
     .run(timestamp, timestamp, id);
+}
+
+export function getCustomReminders(nowIso) {
+  return db.prepare(`
+    SELECT ${selectColumns}
+    FROM tasks
+    WHERE completed_at IS NULL AND reminder_at IS NOT NULL
+      AND reminder_at <= ? AND reminder_sent_at IS NULL
+    ORDER BY reminder_at ASC
+  `).all(nowIso);
+}
+
+export function markCustomReminded(id, timestamp = new Date().toISOString()) {
+  db.prepare('UPDATE tasks SET reminder_sent_at = ?, updated_at = ? WHERE id = ?')
+    .run(timestamp, timestamp, id);
+}
+
+export function getTaskNotes(taskId) {
+  return db.prepare(`
+    SELECT id, task_id AS taskId, content, created_at AS createdAt
+    FROM task_notes
+    WHERE task_id = ?
+    ORDER BY created_at DESC, id DESC
+  `).all(taskId);
+}
+
+export function addTaskNote(taskId, content) {
+  const task = getTask(taskId);
+  if (!task) return null;
+  const cleanContent = String(content || '').trim();
+  if (!cleanContent) throw new Error('Not içeriği gerekli.');
+  const createdAt = new Date().toISOString();
+  const result = db.prepare(`
+    INSERT INTO task_notes (task_id, content, created_at)
+    VALUES (?, ?, ?)
+  `).run(taskId, cleanContent, createdAt);
+  db.prepare('UPDATE tasks SET updated_at = ? WHERE id = ?').run(createdAt, taskId);
+  return db.prepare(`
+    SELECT id, task_id AS taskId, content, created_at AS createdAt
+    FROM task_notes WHERE id = ?
+  `).get(Number(result.lastInsertRowid));
+}
+
+function nextReminderAt(task, nextDue) {
+  if (!task.reminderAt || !task.dueAt) return null;
+  const dueTime = new Date(task.dueAt).getTime();
+  const reminderTime = new Date(task.reminderAt).getTime();
+  if (!Number.isFinite(dueTime) || !Number.isFinite(reminderTime)) return null;
+  return new Date(nextDue.getTime() - (dueTime - reminderTime)).toISOString();
 }

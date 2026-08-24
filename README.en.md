@@ -22,10 +22,12 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - Projects with `#tags`, priorities `p1`–`p3`, and free-text notes
 - Recurrence from Turkish/English phrases or standard RRULE strings
 - Today, Upcoming, Inbox, project, and Completed views
+- A Workflow view for Planned, In progress, Waiting, and Blocked stages
+- Per-task progress, detailed descriptions, and timestamped work notes
 - Overdue tasks pinned in red at the top of Today
 - Four color palettes, four local font sets, and device-local appearance preferences
 - Restrained micro-interactions for buttons, completion, and appearance controls, plus reduced motion
-- ntfy due reminders and a daily 07:00 digest
+- ntfy custom reminders, due alerts, and a daily 07:00 digest
 - Terminal capture with `t add "..."`
 - Server-rendered Express + EJS UI and a single better-sqlite3 database
 
@@ -77,7 +79,7 @@ call Sam tomorrow 4pm #home p2
 water plants every mon,thu 9am #home p3
 ```
 
-Tasks without a date go to Inbox. Completing a recurring task creates the next occurrence automatically.
+Tasks without a date go to Inbox. The task detail screen tracks stage, progress, deadline, a custom reminder, and timestamped work notes. Completing a recurring task creates the next occurrence automatically.
 
 ## Personalize the interface
 
@@ -97,7 +99,7 @@ These preferences remain in the browser's local storage and are never sent to th
 
 4. Restart Gerit.
 
-Treat a public ntfy topic name like a password. `APP_TIMEZONE` controls reminder and digest time; `NTFY_SERVER` can point to a self-hosted ntfy instance.
+Treat a public ntfy topic name like a password. Custom reminder times are configured on each task and must be earlier than the deadline. `APP_TIMEZONE` controls reminder and digest time; `NTFY_SERVER` can point to a self-hosted ntfy instance.
 
 ## Database location and backup
 

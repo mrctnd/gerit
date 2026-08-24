@@ -1,7 +1,14 @@
 import cron from 'node-cron';
 import { config } from './config.js';
 import { dueMeta, now, todayRange, digestDate } from './dates.js';
-import { getDueForReminder, getTodayTasks, markReminded } from './db.js';
+import {
+  getCustomReminders,
+  getDueForReminder,
+  getTodayTasks,
+  markCustomReminded,
+  markReminded,
+} from './db.js';
+import { taskStatusMeta } from './workflow.js';
 
 export function startReminders() {
   if (!config.ntfyTopic) {
@@ -27,15 +34,36 @@ export function startReminders() {
 
 export async function checkDueTasks(reference = new Date()) {
   if (!config.ntfyTopic) return 0;
-  const tasks = getDueForReminder(reference.toISOString());
+  const referenceIso = reference.toISOString();
+  const customReminders = getCustomReminders(referenceIso);
+  const customTaskIds = new Set(customReminders.map((task) => task.id));
+  const dueTasks = getDueForReminder(referenceIso).filter((task) => !customTaskIds.has(task.id));
   let sent = 0;
 
-  for (const task of tasks) {
+  for (const task of customReminders) {
     const due = dueMeta(task.dueAt);
+    const status = taskStatusMeta(task.status, task.completedAt);
     const suffix = [task.project ? `#${task.project}` : '', due.label].filter(Boolean).join(' · ');
+    const details = [`${status.label} · %${task.progress}`, task.notes].filter(Boolean).join('\n');
+    await publish({
+      title: suffix ? `Gerit hatırlatması · ${suffix}` : 'Gerit hatırlatması',
+      message: details ? `${task.title}\n${details}` : task.title,
+      priority: task.priority === 1 ? '5' : task.priority === 2 ? '4' : '3',
+      tags: 'bell,clipboard',
+    });
+    markCustomReminded(task.id);
+    if (task.dueAt && task.dueAt <= referenceIso) markReminded(task.id);
+    sent += 1;
+  }
+
+  for (const task of dueTasks) {
+    const due = dueMeta(task.dueAt);
+    const status = taskStatusMeta(task.status, task.completedAt);
+    const suffix = [task.project ? `#${task.project}` : '', due.label].filter(Boolean).join(' · ');
+    const details = [`${status.label} · %${task.progress}`, task.notes].filter(Boolean).join('\n');
     await publish({
       title: suffix ? `İşin zamanı geldi · ${suffix}` : 'İşin zamanı geldi',
-      message: task.notes ? `${task.title}\n${task.notes}` : task.title,
+      message: details ? `${task.title}\n${details}` : task.title,
       priority: task.priority === 1 ? '5' : task.priority === 2 ? '4' : '3',
       tags: 'alarm_clock,white_check_mark',
     });

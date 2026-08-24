@@ -40,6 +40,11 @@
             <span>Gelen Kutusu</span>
             <% if (counts.inbox) { %><span class="nav-count"><%= counts.inbox %></span><% } %>
           </a>
+          <a class="nav-item <%= currentPath === '/workflow' ? 'active' : '' %>" href="/workflow">
+            <span class="nav-icon workflow-icon" aria-hidden="true">◫</span>
+            <span>İş Akışı</span>
+            <% if (counts.workflow) { %><span class="nav-count"><%= counts.workflow %></span><% } %>
+          </a>
           <a class="nav-item <%= currentPath === '/completed' ? 'active' : '' %>" href="/completed">
             <span class="nav-icon completed-icon" aria-hidden="true">✓</span>
             <span>Tamamlananlar</span>
@@ -89,8 +94,8 @@
             <span class="appearance-trigger-label">Görünüm</span>
             <kbd>G</kbd>
           </button>
-          <div class="local-badge" title="Şirket ağına özel çalışma alanı">
-            <span aria-hidden="true"></span> Şirket içi
+          <div class="local-badge <%= config.notificationsEnabled ? 'notifications-on' : '' %>" title="<%= config.notificationsEnabled ? 'ntfy bildirimleri etkin' : 'Bildirimler için NTFY_TOPIC ayarlayın' %>">
+            <span aria-hidden="true"></span> <%= config.notificationsEnabled ? 'Bildirim açık' : 'Şirket içi' %>
           </div>
         </header>
 
@@ -111,6 +116,11 @@
                 <span>Açık işler</span>
                 <strong><%= summary.open %></strong>
                 <small>tüm projelerde</small>
+              </article>
+              <article class="summary-active">
+                <span>Devam eden</span>
+                <strong><%= summary.inProgress %></strong>
+                <small><%= summary.blocked ? `${summary.blocked} iş bloke` : 'aktif yürütülen' %></small>
               </article>
               <article>
                 <span>Bugün</span>
@@ -141,11 +151,23 @@
                   <button type="submit">İşi ekle <kbd>↵</kbd></button>
                 </div>
                 <details class="quick-details">
-                  <summary>Not ve tekrar ekle</summary>
+                  <summary>Aşama, not, hatırlatma ve tekrar ekle</summary>
                   <div class="quick-detail-grid">
                     <label>
                       <span>Notlar</span>
                       <input name="notes" placeholder="Hatırlaman gereken ayrıntılar">
+                    </label>
+                    <label>
+                      <span>Aşama</span>
+                      <select name="status">
+                        <% taskStatuses.forEach((status) => { %>
+                          <option value="<%= status.value %>"><%= status.label %></option>
+                        <% }) %>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Özel hatırlatma</span>
+                      <input name="reminderAt" type="datetime-local">
                     </label>
                     <label>
                       <span>Tekrar</span>
@@ -160,7 +182,7 @@
 
           <section class="task-surface" aria-live="polite">
             <% if (view.kind === 'edit') { %>
-              <%- include('partials/edit-task', { task: view.task, returnTo: view.returnTo }) %>
+              <%- include('partials/edit-task', { task: view.task, taskNotes: view.taskNotes, returnTo: view.returnTo }) %>
             <% } else { %>
               <% const groups = view.kind === 'grouped' ? view.groups : [{ title: null, tone: 'default', tasks: view.tasks || [] }]; %>
               <% const totalTasks = groups.reduce((sum, group) => sum + group.tasks.length, 0); %>

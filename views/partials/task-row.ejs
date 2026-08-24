@@ -17,15 +17,23 @@
   <a class="task-body" href="/tasks/<%= task.id %>/edit?from=<%= encodeURIComponent(returnPath) %>">
     <span class="task-title"><%= task.title %></span>
     <% if (task.notes) { %><span class="task-notes"><%= task.notes %></span><% } %>
-    <% if (task.completedLabel || task.due.label || task.project || task.priority || task.repeatLabel) { %>
+    <% if (task.completedLabel || task.due.label || task.project || task.priority || task.repeatLabel || task.statusMeta || task.reminder.label) { %>
       <span class="task-meta">
         <% if (task.completedLabel) { %><span class="meta-chip completed-chip">✓ <%= task.completedLabel %></span><% } %>
+        <% if (!task.completedAt) { %><span class="meta-chip status-chip status-<%= task.statusMeta.tone %>"><%= task.statusMeta.label %></span><% } %>
         <% if (task.due.label) { %>
           <span class="meta-chip due-chip <%= !task.completedAt && task.due.overdue ? 'overdue-chip' : '' %>"><%= !task.completedAt && task.due.overdue ? '↑ ' : '' %><%= task.due.label %></span>
         <% } %>
         <% if (task.project) { %><span class="meta-chip project-chip">#<%= task.project %></span><% } %>
         <% if (task.priority) { %><span class="meta-chip priority-chip p<%= task.priority %>">P<%= task.priority %></span><% } %>
+        <% if (task.reminder.label && !task.completedAt) { %><span class="meta-chip reminder-chip">♢ <%= task.reminder.label %></span><% } %>
         <% if (task.repeatLabel) { %><span class="meta-chip repeat-chip">↻ <%= task.repeatLabel %></span><% } %>
+      </span>
+    <% } %>
+    <% if (!task.completedAt && task.progress > 0) { %>
+      <span class="row-progress">
+        <progress max="100" value="<%= task.progress %>"><%= task.progress %>%</progress>
+        <span>%<%= task.progress %></span>
       </span>
     <% } %>
   </a>

@@ -19,12 +19,47 @@ let recurrenceModule;
 let reminders;
 
 before(async () => {
+  const { default: Database } = await import('better-sqlite3');
+  const legacyDb = new Database(databasePath);
+  legacyDb.exec(`
+    CREATE TABLE tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      notes TEXT NOT NULL DEFAULT '',
+      project TEXT,
+      priority INTEGER,
+      due_at TEXT,
+      recurrence TEXT,
+      reminded_at TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    INSERT INTO tasks (
+      title, notes, completed_at, created_at, updated_at
+    ) VALUES (
+      'Eski tamamlanmış iş', '', '2026-08-22T09:00:00.000Z',
+      '2026-08-20T09:00:00.000Z', '2026-08-22T09:00:00.000Z'
+    );
+  `);
+  legacyDb.close();
+
   ({ parseQuickAdd } = await import('../src/parser.js'));
   recurrenceModule = await import('../src/recurrence.js');
   dbModule = await import('../src/db.js');
   ({ createApp: app } = await import('../src/app.js'));
   app = app();
   reminders = await import('../src/reminders.js');
+});
+
+test('eski veritabanı yeni iş akışı alanlarına veri kaybetmeden taşınır', () => {
+  const migrated = dbModule.getTask(1);
+
+  assert.equal(migrated.title, 'Eski tamamlanmış iş');
+  assert.equal(migrated.status, 'completed');
+  assert.equal(migrated.progress, 100);
+  assert.equal(migrated.reminderAt, null);
+  assert.deepEqual(dbModule.getTaskNotes(migrated.id), []);
 });
 
 after(() => {
@@ -100,6 +135,64 @@ test('search includes task notes', async () => {
   assert.match(response.text, /Book train/);
 });
 
+test('iş aşaması, ilerleme ve özel hatırlatma ayrıntılarda saklanır', async () => {
+  const task = dbModule.addTask({
+    title: 'Yönetim sunumunu hazırla',
+    notes: 'Son rakamları doğrula',
+    project: 'yönetim',
+    priority: 1,
+    dueAt: '2026-08-28T13:00:00.000Z',
+    reminderAt: '2026-08-27T06:00:00.000Z',
+    status: 'in_progress',
+    progress: 45,
+  });
+
+  assert.equal(task.status, 'in_progress');
+  assert.equal(task.progress, 45);
+  assert.equal(task.reminderAt, '2026-08-27T06:00:00.000Z');
+
+  const workflow = await request(app).get('/workflow').expect(200);
+  assert.match(workflow.text, /İş Akışı/);
+  assert.match(workflow.text, /Yönetim sunumunu hazırla/);
+  assert.match(workflow.text, /%45/);
+  assert.match(workflow.text, /Devam ediyor/);
+});
+
+test('zaman damgalı çalışma notu eklenir ve aramada bulunur', async () => {
+  const task = dbModule.addTask({ title: 'Tedarikçi görüşmesi', status: 'waiting' });
+
+  await request(app)
+    .post(`/tasks/${task.id}/notes`)
+    .type('form')
+    .send({ content: 'Revize fiyat tablosu cuma günü gelecek', returnTo: '/workflow' })
+    .expect(302)
+    .expect('Location', `/tasks/${task.id}/edit?from=%2Fworkflow`);
+
+  const detail = await request(app).get(`/tasks/${task.id}/edit?from=/workflow`).expect(200);
+  assert.match(detail.text, /Çalışma günlüğü/);
+  assert.match(detail.text, /Revize fiyat tablosu cuma günü gelecek/);
+
+  const search = await request(app).get('/search?q=Revize%20fiyat').expect(200);
+  assert.match(search.text, /Tedarikçi görüşmesi/);
+});
+
+test('hatırlatma son tarihten sonra planlanamaz', async () => {
+  const task = dbModule.addTask({ title: 'Teslim kontrolü' });
+
+  const response = await request(app)
+    .post(`/tasks/${task.id}`)
+    .type('form')
+    .send({
+      title: task.title,
+      dueAt: '2026-08-30T10:00',
+      reminderAt: '2026-08-30T11:00',
+      returnTo: '/workflow',
+    })
+    .expect(400);
+
+  assert.match(response.text, /Hatırlatma zamanı son tarihten önce olmalı/);
+});
+
 test('completing a recurring task schedules its next occurrence', () => {
   const task = dbModule.addTask({
     title: 'Water plants',
@@ -173,8 +266,37 @@ test('due reminders are sent once and then marked', async () => {
     assert.equal(calls.length, 1);
     const payload = JSON.parse(calls[0].options.body);
     assert.equal(payload.topic, 'local-tasks-test-topic');
-    assert.equal(payload.message, task.title);
+    assert.match(payload.message, new RegExp(`^${task.title}`));
+    assert.match(payload.message, /Planlandı · %0/);
     assert.equal(payload.priority, 5);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('özel hatırlatma zamanı geldiğinde bildirim yalnızca bir kez gönderilir', async () => {
+  const task = dbModule.addTask({
+    title: 'Teklif dosyasını gözden geçir',
+    dueAt: '2026-08-26T12:00:00.000Z',
+    reminderAt: '2026-08-25T06:00:00.000Z',
+    status: 'in_progress',
+    progress: 70,
+    priority: 2,
+  });
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, options) => {
+    calls.push(JSON.parse(options.body));
+    return new Response('{}', { status: 200 });
+  };
+
+  try {
+    assert.equal(await reminders.checkDueTasks(new Date('2026-08-25T06:00:00.000Z')), 1);
+    assert.equal(await reminders.checkDueTasks(new Date('2026-08-25T06:01:00.000Z')), 0);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].title, /Gerit hatırlatması/);
+    assert.match(calls[0].message, new RegExp(task.title));
+    assert.match(calls[0].message, /Devam ediyor · %70/);
   } finally {
     globalThis.fetch = originalFetch;
   }

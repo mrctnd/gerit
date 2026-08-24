@@ -6,6 +6,10 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ### Eklendi
 
+- Planlandı, Devam ediyor, Beklemede ve Bloke aşamalarını gruplandıran İş Akışı görünümü.
+- Görev bazında ilerleme yüzdesi ve liste üzerinde ilerleme göstergesi.
+- Son tarihten önce seçilebilen özel ntfy hatırlatma zamanı; son tarih bildirimi ayrıca korunur.
+- Görev ayrıntısında zaman damgalı çalışma notları ve bu notlar içinde arama.
 - Atlas, Orman, Lavanta ve Kehribar renk paletleri.
 - Modern, Humanist, Editoryal ve Teknik yerel font setleri.
 - Sistem, akıcı ve sakin hareket tercihleriyle sayfa ve görev mikro etkileşimleri.
@@ -13,6 +17,7 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ### Değişti
 
+- Windows'ta yerel C++ derleyicisi gerektirmeyen hazır ikili kurulumu korumak için better-sqlite3 12.11.1'e sabitlendi.
 - Üst çubuk, görev kartları, hızlı ekleme ve mobil görünüm yeni tasarım sistemiyle iyileştirildi.
 - Görünüm tercihleri yalnızca tarayıcının yerel depolamasında saklanıyor.
 - Sayfa ve görünüm değişimlerindeki otomatik içerik giriş animasyonu kaldırıldı; yalnızca doğrudan işlem geri bildirimleri hareketli kaldı.

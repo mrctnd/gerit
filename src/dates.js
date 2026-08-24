@@ -82,3 +82,11 @@ export function completedLabel(value, reference = now()) {
   if (date.hasSame(reference.minus({ days: 1 }), 'day')) return `Dün · ${date.toFormat('HH:mm')}`;
   return date.toFormat('d LLL yyyy · HH:mm');
 }
+
+export function activityLabel(value, reference = now()) {
+  if (!value) return '';
+  const date = DateTime.fromISO(value, { zone: 'utc' }).setZone(config.timezone).setLocale('tr-TR');
+  if (date.hasSame(reference, 'day')) return `Bugün ${date.toFormat('HH:mm')}`;
+  if (date.hasSame(reference.minus({ days: 1 }), 'day')) return `Dün ${date.toFormat('HH:mm')}`;
+  return date.toFormat('d LLL yyyy · HH:mm');
+}

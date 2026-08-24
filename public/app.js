@@ -21,6 +21,8 @@
   const appearanceTrigger = document.querySelector('#appearance-trigger');
   const appearancePanel = appearanceDialog?.querySelector('.appearance-panel');
   const appearanceStatus = document.querySelector('#appearance-status');
+  const progressInput = document.querySelector('input[name="progress"]');
+  const progressOutput = document.querySelector('[data-progress-output]');
   let selectedIndex = rows.length ? 0 : -1;
 
   function readPreferences() {
@@ -78,6 +80,10 @@
     document.querySelectorAll('[data-motion-option]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.motionOption === preferences.motion));
     });
+  }
+
+  function syncProgress() {
+    if (progressInput && progressOutput) progressOutput.textContent = `%${progressInput.value}`;
   }
 
   function applyPreference(key, value, shouldAnnounce = true) {
@@ -259,6 +265,9 @@
     document.querySelector('.quick-add-card')?.classList.add('is-submitting');
   });
 
+  progressInput?.addEventListener('input', syncProgress);
+
   systemMotion.addEventListener?.('change', syncAppearanceControls);
+  syncProgress();
   syncAppearanceControls();
 })();

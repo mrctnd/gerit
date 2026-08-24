@@ -22,11 +22,13 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Tek satırda proje ve öncelik: `#finans p1`
 - Tekrarlar: `her pazartesi,perşembe`, `her ayın 1’i`, `every mon,thu` ve RRULE
 - Bugün, Yaklaşan, Gelen Kutusu, proje ve Tamamlananlar görünümleri
+- Planlandı, Devam ediyor, Beklemede ve Bloke aşamalarını bir arada gösteren İş Akışı görünümü
+- Her iş için yüzde ilerleme, ayrıntılı açıklama ve zaman damgalı çalışma notları
 - Geciken işleri Bugün görünümünün en üstünde kırmızı sabitleme
 - Serbest metin notları, görev kopyalama ve yeniden açma
 - Dört renk paleti, dört yerel font seti ve cihazda saklanan görünüm tercihleri
 - Butonlarda, görev tamamlamada ve görünüm panelinde ölçülü mikro etkileşimler; azaltılmış hareket modu
-- ntfy ile zamanı gelen işler ve her sabah 07:00 günlük özet
+- ntfy ile özel hatırlatma anı, son tarih uyarısı ve her sabah 07:00 günlük özet
 - Her terminalden `t add "..."` ile hızlı yakalama
 - Express + EJS + better-sqlite3; istemci çerçevesi ve bulut hesabı yok
 
@@ -98,7 +100,8 @@ call Sam tomorrow 4pm #home p2
 - `#proje` işi bir projeye bağlar.
 - `p1`, `p2`, `p3` önceliği belirler.
 - Tarih verilmezse iş Gelen Kutusu'na düşer.
-- İş ayrıntısından not, tarih, proje, öncelik ve RRULE düzenlenebilir.
+- İş ayrıntısından açıklama, aşama, ilerleme yüzdesi, tarih, özel hatırlatma, proje, öncelik ve RRULE düzenlenebilir.
+- İş notları çalışma günlüğüne zaman damgalı olarak eklenir ve genel aramada bulunur.
 - Tekrarlanan iş tamamlandığında sıradaki oluşum otomatik oluşturulur.
 
 ## Klavye kısayolları
@@ -147,7 +150,7 @@ Komut web uygulamasıyla aynı `.env` ve SQLite dosyasını kullanır. Global ba
 
 5. Gerit'i yeniden başlatın.
 
-Gerit her dakika zamanı gelen işleri kontrol eder ve saat 07:00'de günün listesini gönderir. Saat dilimini `APP_TIMEZONE`, sunucuyu `NTFY_SERVER` belirler. Herkese açık `ntfy.sh` kullanıyorsanız konu adını parola gibi koruyun.
+Gerit her dakika özel hatırlatmaları ve son tarihi gelen işleri kontrol eder; saat 07:00'de de günün listesini gönderir. Bir işin özel hatırlatma zamanı ayrıntı ekranından seçilir ve son tarihten önce olmalıdır. Saat dilimini `APP_TIMEZONE`, sunucuyu `NTFY_SERVER` belirler. Herkese açık `ntfy.sh` kullanıyorsanız konu adını parola gibi koruyun.
 
 ## Veriniz nerede?
 

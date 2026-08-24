@@ -2,6 +2,13 @@
   <% if (task.completedAt) { %>
     <div class="completed-banner">Bu iş tamamlandı. Kaydını yine de düzenleyebilir veya silebilirsin.</div>
   <% } %>
+  <div class="task-health" aria-label="İş durumu">
+    <div>
+      <span class="status-chip status-<%= task.statusMeta.tone %>"><%= task.statusMeta.label %></span>
+      <strong>%<%= task.progress %> tamamlandı</strong>
+    </div>
+    <progress max="100" value="<%= task.progress %>"><%= task.progress %>%</progress>
+  </div>
   <form action="/tasks/<%= task.id %>" method="post" class="edit-form">
     <input type="hidden" name="returnTo" value="<%= returnTo %>">
     <label class="field field-wide">
@@ -9,8 +16,8 @@
       <input name="title" value="<%= task.title %>" required autofocus>
     </label>
     <label class="field field-wide">
-      <span>Notlar</span>
-      <textarea name="notes" rows="6" placeholder="Bağlam, bağlantı, telefon numarası veya diğer ayrıntılar"><%= task.notes %></textarea>
+      <span>Açıklama ve ayrıntılar</span>
+      <textarea name="notes" rows="6" placeholder="Amaç, teslimat ölçütleri, bağlantılar ve gerekli tüm ayrıntılar"><%= task.notes %></textarea>
     </label>
     <div class="form-grid">
       <label class="field">
@@ -27,8 +34,30 @@
         </select>
       </label>
       <label class="field">
+        <span>Aşama</span>
+        <select name="status" <%= task.completedAt ? 'disabled' : '' %>>
+          <% if (task.completedAt) { %>
+            <option value="completed" selected>Tamamlandı</option>
+          <% } else { %>
+            <% taskStatuses.forEach((status) => { %>
+              <option value="<%= status.value %>" <%= task.status === status.value ? 'selected' : '' %>><%= status.label %></option>
+            <% }) %>
+          <% } %>
+        </select>
+      </label>
+      <label class="field progress-field">
+        <span>İlerleme <output data-progress-output>%<%= task.progress %></output></span>
+        <input name="progress" type="range" min="0" max="100" step="5" value="<%= task.progress %>" <%= task.completedAt ? 'disabled' : '' %>>
+        <small>İşin tamamlanma düzeyini yüzde olarak güncelle</small>
+      </label>
+      <label class="field">
         <span>Son tarih</span>
         <input name="dueAt" type="datetime-local" value="<%= toDateTimeInput(task.dueAt) %>">
+      </label>
+      <label class="field">
+        <span>Özel hatırlatma</span>
+        <input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(task.reminderAt) %>">
+        <small>Son tarihten önce olmalı · <%= config.notificationsEnabled ? 'ntfy etkin' : 'ntfy henüz ayarlı değil' %></small>
       </label>
       <label class="field">
         <span>Tekrar</span>
@@ -41,6 +70,35 @@
       <a class="secondary-button" href="<%= returnTo %>">Vazgeç</a>
     </div>
   </form>
+  <section class="activity-section" aria-labelledby="activity-title">
+    <div class="activity-heading">
+      <div>
+        <p class="eyebrow">Çalışma günlüğü</p>
+        <h2 id="activity-title">İş notları</h2>
+      </div>
+      <span><%= taskNotes.length %> kayıt</span>
+    </div>
+    <form action="/tasks/<%= task.id %>/notes" method="post" class="note-form">
+      <input type="hidden" name="returnTo" value="<%= returnTo %>">
+      <label class="field">
+        <span>Yeni not</span>
+        <textarea name="content" rows="3" required placeholder="Görüşme sonucu, alınan karar, engel veya bir sonraki adım..."></textarea>
+      </label>
+      <button class="primary-button" type="submit">Notu kaydet</button>
+    </form>
+    <% if (taskNotes.length) { %>
+      <div class="note-timeline">
+        <% taskNotes.forEach((note) => { %>
+          <article>
+            <time datetime="<%= note.createdAt %>"><%= note.createdLabel %></time>
+            <p><%= note.content %></p>
+          </article>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="activity-empty">Henüz çalışma notu yok. İlk gelişmeyi yukarıdan kaydedebilirsin.</p>
+    <% } %>
+  </section>
   <div class="secondary-actions">
     <% if (task.completedAt) { %>
       <form action="/tasks/<%= task.id %>/reopen" method="post">

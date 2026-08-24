@@ -2,6 +2,7 @@ import path from 'node:path';
 import express from 'express';
 import { appRoot, config } from './config.js';
 import {
+  addTaskNote,
   addTask,
   completeTask,
   deleteTask,
@@ -14,13 +15,16 @@ import {
   getTask,
   getTodayTasks,
   getUpcomingTasks,
+  getWorkflowTasks,
   getWorkSummary,
+  getTaskNotes,
   healthCheck,
   reopenTask,
   searchTasks,
   updateTask,
 } from './db.js';
 import {
+  activityLabel,
   dayHeading,
   completedLabel,
   dueMeta,
@@ -32,6 +36,7 @@ import {
 } from './dates.js';
 import { parseQuickAdd } from './parser.js';
 import { describeRecurrence, parseRecurrence } from './recurrence.js';
+import { TASK_STATUSES, normalizeProgress, taskStatusMeta } from './workflow.js';
 
 export function createApp() {
   const app = express();
@@ -74,7 +79,11 @@ export function createApp() {
     res.locals.summary = getWorkSummary(today.start, today.end, new Date().toISOString());
     res.locals.currentPath = req.path;
     res.locals.returnPath = req.originalUrl;
-    res.locals.config = { timezone: config.timezone };
+    res.locals.config = {
+      timezone: config.timezone,
+      notificationsEnabled: Boolean(config.ntfyTopic),
+    };
+    res.locals.taskStatuses = TASK_STATUSES;
     res.locals.assetVersion = assetVersion;
     res.locals.encodeURIComponent = encodeURIComponent;
     res.locals.toDateTimeInput = toDateTimeInput;
@@ -137,6 +146,26 @@ export function createApp() {
     });
   });
 
+  app.get('/workflow', (_req, res) => {
+    const tasks = decorateTasks(getWorkflowTasks());
+    const statusOrder = ['in_progress', 'planned', 'waiting', 'blocked'];
+    renderPage(res, {
+      title: 'İş Akışı',
+      kicker: 'Aşamalar ve ilerleme',
+      kind: 'grouped',
+      groups: statusOrder.map((status) => {
+        const meta = taskStatusMeta(status);
+        return {
+          title: meta.label,
+          tone: status === 'blocked' ? 'danger' : 'default',
+          tasks: tasks.filter((task) => task.status === status),
+        };
+      }),
+      emptyTitle: 'Takip edilecek açık iş yok',
+      emptyCopy: 'Yeni bir iş eklediğinde aşamasını ve ilerleme yüzdesini buradan izleyebilirsin.',
+    });
+  });
+
   app.get('/completed', (_req, res) => {
     renderPage(res, {
       title: 'Tamamlananlar',
@@ -182,7 +211,11 @@ export function createApp() {
       title: 'İşi düzenle',
       kicker: task.completedAt ? 'Tamamlanmış iş' : 'İş ayrıntıları',
       kind: 'edit',
-      task,
+      task: decorateTask(task),
+      taskNotes: getTaskNotes(task.id).map((note) => ({
+        ...note,
+        createdLabel: activityLabel(note.createdAt),
+      })),
       returnTo: safeReturnTo(req.query.from, '/today'),
     });
   });
@@ -196,7 +229,15 @@ export function createApp() {
         if (!repeat.rrule) throw new Error('“her ayın 1’i”, “her pazartesi,perşembe” ya da geçerli bir RRULE kullan.');
         recurrence = repeat.rrule;
       }
-      addTask({ ...parsed, notes: req.body.notes, recurrence });
+      const reminderAt = toUtcIso(req.body.reminderAt);
+      validateReminder(reminderAt, parsed.dueAt);
+      addTask({
+        ...parsed,
+        notes: req.body.notes,
+        recurrence,
+        status: req.body.status,
+        reminderAt,
+      });
       res.redirect(safeReturnTo(req.body.returnTo, '/today'));
     } catch (error) {
       next(error);
@@ -240,15 +281,33 @@ export function createApp() {
         throw new Error('“her ayın 1’i”, “her pazartesi,perşembe” ya da geçerli bir RRULE kullan.');
       }
 
+      const dueAt = toUtcIso(req.body.dueAt);
+      const reminderAt = toUtcIso(req.body.reminderAt);
+      validateReminder(reminderAt, dueAt);
       updateTask(Number(req.params.id), {
         title: req.body.title || '',
         notes: req.body.notes || '',
         project: req.body.project || null,
         priority: req.body.priority || null,
-        dueAt: toUtcIso(req.body.dueAt),
+        dueAt,
         recurrence: recurrence.rrule,
+        status: req.body.status,
+        progress: req.body.progress,
+        reminderAt,
       });
       res.redirect(safeReturnTo(req.body.returnTo, '/today'));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/tasks/:id/notes', (req, res, next) => {
+    try {
+      const taskId = Number(req.params.id);
+      const note = addTaskNote(taskId, req.body.content);
+      if (!note) return next();
+      const returnTo = safeReturnTo(req.body.returnTo, '/today');
+      res.redirect(`/tasks/${taskId}/edit?from=${encodeURIComponent(returnTo)}`);
     } catch (error) {
       next(error);
     }
@@ -275,8 +334,10 @@ export function createApp() {
   });
 
   app.use((error, _req, res, _next) => {
-    console.error(error);
-    const badRequest = error.message?.includes('gerekli') || error.message?.includes('RRULE');
+    const badRequest = error.message?.includes('gerekli')
+      || error.message?.includes('RRULE')
+      || error.message?.includes('Hatırlatma');
+    if (!badRequest) console.error(error);
     res.status(badRequest ? 400 : 500);
     renderPage(res, {
       title: 'Bir şeyler ters gitti',
@@ -291,12 +352,19 @@ export function createApp() {
 }
 
 function decorateTasks(tasks) {
-  return tasks.map((task) => ({
+  return tasks.map(decorateTask);
+}
+
+function decorateTask(task) {
+  return {
     ...task,
     due: dueMeta(task.dueAt),
+    reminder: dueMeta(task.reminderAt),
     repeatLabel: describeRecurrence(task.recurrence),
     completedLabel: completedLabel(task.completedAt),
-  }));
+    statusMeta: taskStatusMeta(task.status, task.completedAt),
+    progress: task.completedAt ? 100 : normalizeProgress(task.progress),
+  };
 }
 
 function renderPage(res, view) {
@@ -306,4 +374,10 @@ function renderPage(res, view) {
 function safeReturnTo(value, fallback) {
   const pathValue = String(value || '');
   return pathValue.startsWith('/') && !pathValue.startsWith('//') ? pathValue : fallback;
+}
+
+function validateReminder(reminderAt, dueAt) {
+  if (reminderAt && dueAt && reminderAt >= dueAt) {
+    throw new Error('Hatırlatma zamanı son tarihten önce olmalı.');
+  }
 }
