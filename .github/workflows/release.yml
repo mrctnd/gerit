@@ -65,7 +65,14 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: |
-          npm run desktop:dist
+          $log = Join-Path $env:RUNNER_TEMP 'desktop-dist.log'
+          npm run desktop:dist 2>&1 | Tee-Object -FilePath $log
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -ne 0) {
+            $details = (Get-Content -LiteralPath $log -Tail 120) -join '%0A'
+            Write-Output "::error title=desktop dist failed::$details"
+            exit $exitCode
+          }
           Copy-Item release/desktop/Gerit-Setup-*.exe .
       - name: Paketi yükle
         uses: actions/upload-artifact@v7.0.1

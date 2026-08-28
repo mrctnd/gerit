@@ -25,6 +25,7 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 - GitHub Release otomasyonu Windows arşivi yerine kurulabilir `Gerit-Setup-*.exe` dosyası üretir.
 - Windows kurulum paketi imzasız açık kaynak dağıtım için sertifika aramadan üretilir.
+- Windows paketleme komutu tag build'lerinde otomatik GitHub publish denemesi yapmaz.
 - SQLite veri katmanı, masaüstü paketinde yerel C++ derleyicisi gerektirmeyen Node.js `node:sqlite` modülüne taşındı.
 - Üst çubuk, görev kartları, hızlı ekleme ve mobil görünüm yeni tasarım sistemiyle iyileştirildi.
 - Görünüm tercihleri artık port bazlı tarayıcı deposu yerine görevlerle aynı yerel SQLite veritabanında saklanıyor.

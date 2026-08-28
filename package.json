@@ -45,7 +45,7 @@
     "dev": "node --watch src/server.js",
     "desktop": "electron .",
     "desktop:pack": "electron-builder --dir --win --x64",
-    "desktop:dist": "electron-builder --win nsis --x64",
+    "desktop:dist": "electron-builder --win nsis --x64 --publish never",
     "test": "node --test --test-concurrency=1",
     "check": "npm test && npm audit --omit=dev"
   },
