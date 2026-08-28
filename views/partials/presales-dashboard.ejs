@@ -1,0 +1,144 @@
+<div class="presales-dashboard">
+  <section class="presales-summary" aria-label="Presales portföy özeti">
+    <article>
+      <span>Aktif dosya</span>
+      <strong><%= presalesSummary.active %></strong>
+      <small>açık fırsat ve ihale</small>
+    </article>
+    <article class="<%= presalesSummary.dueSoon ? 'summary-active' : '' %>">
+      <span>7 gün içinde</span>
+      <strong><%= presalesSummary.dueSoon %></strong>
+      <small>yaklaşan son tarih</small>
+    </article>
+    <article class="<%= presalesSummary.overdue ? 'summary-danger' : '' %>">
+      <span>Geciken</span>
+      <strong><%= presalesSummary.overdue %></strong>
+      <small>termini geçen dosya</small>
+    </article>
+    <article class="<%= presalesSummary.noncompliant ? 'summary-danger' : '' %>">
+      <span>Uygunsuz</span>
+      <strong><%= presalesSummary.noncompliant %></strong>
+      <small>değişiklik gereken kayıt</small>
+    </article>
+    <article class="<%= presalesSummary.criticalRisks ? 'summary-danger' : '' %>">
+      <span>Kritik risk</span>
+      <strong><%= presalesSummary.criticalRisks %></strong>
+      <small><%= presalesSummary.clarification %> teyit bekliyor</small>
+    </article>
+  </section>
+
+  <section class="presales-section" aria-labelledby="active-cases-title">
+    <div class="presales-section-heading">
+      <div>
+        <p class="eyebrow">Portföy</p>
+        <h2 id="active-cases-title">Presales dosyaları</h2>
+      </div>
+      <a class="primary-button" href="#new-presales-case">Yeni dosya</a>
+    </div>
+
+    <% if (cases.length) { %>
+      <div class="presales-case-list">
+        <% cases.forEach((presalesCase) => { %>
+          <a class="presales-case-row <%= presalesCase.deadlineMeta.overdue && !['won', 'lost'].includes(presalesCase.stage) ? 'is-overdue' : '' %>" href="/presales/<%= presalesCase.id %>">
+            <span class="presales-case-main">
+              <strong><%= presalesCase.title %></strong>
+              <small><%= [presalesCase.customer, presalesCase.tenderReference].filter(Boolean).join(' · ') || 'Müşteri ve referans bekleniyor' %></small>
+              <span class="presales-inline-meta">
+                <% if (presalesCase.manufacturer) { %><span><%= presalesCase.manufacturer %></span><% } %>
+                <% if (presalesCase.proposedModel) { %><span><%= presalesCase.proposedModel %></span><% } %>
+                <% if (presalesCase.deadlineMeta.label) { %><span class="<%= presalesCase.deadlineMeta.overdue ? 'text-danger' : '' %>"><%= presalesCase.deadlineMeta.label %></span><% } %>
+              </span>
+            </span>
+            <span class="presales-case-health">
+              <span class="status-chip status-<%= presalesCase.stageMeta.tone %>"><%= presalesCase.stageMeta.label %></span>
+              <span class="status-chip status-<%= presalesCase.offerabilityMeta.tone %>"><%= presalesCase.offerabilityMeta.label %></span>
+              <small><%= presalesCase.recordCount %> kayıt · <%= presalesCase.issueCount %> açık bulgu</small>
+            </span>
+          </a>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="presales-empty">
+        <h3>İlk presales dosyanı oluştur</h3>
+        <p>Müşteri talebini tek dosyada aç; şartname, kitlist, ürün ve rekabet kayıtlarını altında ilerlet.</p>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="presales-section presales-create" id="new-presales-case" aria-labelledby="new-presales-title">
+    <div class="presales-section-heading">
+      <div>
+        <p class="eyebrow">Yeni çalışma</p>
+        <h2 id="new-presales-title">Presales dosyası aç</h2>
+      </div>
+    </div>
+    <form action="/presales" method="post" class="presales-form">
+      <div class="presales-form-grid">
+        <label class="field field-wide">
+          <span>Dosya / proje adı</span>
+          <input name="title" required placeholder="Kurum - Sunucu yenileme projesi">
+        </label>
+        <label class="field">
+          <span>Müşteri / kurum</span>
+          <input name="customer" placeholder="Kurum adı">
+        </label>
+        <label class="field">
+          <span>İhale / fırsat referansı</span>
+          <input name="tenderReference" placeholder="2026/12345 veya CRM no">
+        </label>
+        <label class="field">
+          <span>Mevcut aşama</span>
+          <select name="stage">
+            <% presalesStages.forEach((stage) => { %><option value="<%= stage.value %>"><%= stage.label %></option><% }) %>
+          </select>
+        </label>
+        <label class="field">
+          <span>Teklif kararı</span>
+          <select name="offerability">
+            <% offerabilityStatuses.forEach((status) => { %><option value="<%= status.value %>"><%= status.label %></option><% }) %>
+          </select>
+        </label>
+        <label class="field">
+          <span>Üretici / marka</span>
+          <input name="manufacturer" placeholder="Lenovo, Dell, HPE, Cisco...">
+        </label>
+        <label class="field">
+          <span>Ürün ailesi / kategori</span>
+          <input name="productFamily" placeholder="Rack sunucu, depolama, ağ...">
+        </label>
+        <label class="field">
+          <span>Teklif edilen model</span>
+          <input name="proposedModel" placeholder="Tam model / MTM">
+        </label>
+        <label class="field">
+          <span>Sorumlu</span>
+          <input name="owner" placeholder="Presales / satış sorumlusu">
+        </label>
+        <label class="field">
+          <span>Son teslim tarihi</span>
+          <input name="deadline" type="datetime-local">
+        </label>
+        <label class="field">
+          <span>Dosya hatırlatması</span>
+          <input name="reminderAt" type="datetime-local">
+          <small>Son teslim tarihinden önce olmalı</small>
+        </label>
+        <label class="field field-wide">
+          <span>Rakipler / alternatifler</span>
+          <input name="competitors" placeholder="Rakip marka ve modeller; segment farklarını ayrıca kaydet">
+        </label>
+        <label class="field field-wide">
+          <span>Sonraki aksiyon</span>
+          <input name="nextAction" placeholder="Üreticiden SKU teyidi al, BOM'u revize et...">
+        </label>
+        <label class="field field-wide">
+          <span>Dosya notları</span>
+          <textarea name="notes" rows="4" placeholder="Kapsam, lokasyon, adet, destek seviyesi, varsayımlar ve önemli bağlam"></textarea>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="primary-button" type="submit">Dosyayı oluştur</button>
+      </div>
+    </form>
+  </section>
+</div>

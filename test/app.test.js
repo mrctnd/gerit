@@ -250,6 +250,123 @@ test('bir iş tüm ayrıntılarıyla kopyalanabilir', () => {
   assert.equal(copy.priority, original.priority);
 });
 
+test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', async () => {
+  const createResponse = await request(app)
+    .post('/presales')
+    .type('form')
+    .send({
+      title: 'Kurum veri merkezi yenileme',
+      customer: 'Örnek Kurum',
+      tenderReference: '2026/SA-17',
+      stage: 'spec_review',
+      offerability: 'conditional',
+      manufacturer: 'Lenovo',
+      productFamily: 'Rack sunucu',
+      proposedModel: 'ThinkSystem SR650 V4',
+      competitors: 'Dell PowerEdge R770, HPE ProLiant DL380 Gen12',
+      deadline: '2026-09-15T17:00',
+      nextAction: 'Üreticiden bellek popülasyon teyidi al',
+    })
+    .expect(302);
+
+  const location = createResponse.headers.location;
+  assert.match(location, /^\/presales\/\d+$/);
+  const caseId = Number(location.split('/').at(-1));
+
+  await request(app)
+    .post(`/presales/${caseId}/records`)
+    .type('form')
+    .send({
+      recordType: 'requirement',
+      referenceNo: '3.2.4',
+      title: 'İki güç kaynağı teslim edilmesi',
+      originalText: 'Sunucu iki adet güç kaynağı ile teslim edilecektir.',
+      requirement: 'Cihaz başına iki adet PSU',
+      offeredItem: 'ThinkSystem SR650 V4',
+      sku: 'PSU-SKU-01',
+      quantity: '2 / cihaz, toplam 8',
+      complianceStatus: 'conditional',
+      capabilityEvidence: 'Ürün kılavuzu iki PSU yuvasını gösteriyor.',
+      inclusionEvidence: 'BOM satırında yalnız bir PSU görünüyor.',
+      compatibilityEvidence: 'Aynı watt ve tip seçilmeli.',
+      entitlementEvidence: 'Servis kapsamı ayrıca teyit edilecek.',
+      sourceRef: 'Product Guide, Power supplies, erişim 2026-08-28',
+      costImpact: 'İkinci PSU fiyatlandırılmalı.',
+      responsibility: 'Güç kablosu ve PDU uyumu yüklenici kapsamında.',
+      action: 'BOMa ikinci PSU ve güç kablosu ekle.',
+      owner: 'Presales',
+      confidence: 'high',
+      riskProbability: '3',
+      riskImpact: '3',
+      evidenceGap: '2',
+    })
+    .expect(302)
+    .expect('Location', new RegExp(`^/presales/${caseId}#record-\\d+$`));
+
+  const presalesCase = dbModule.getPresalesCase(caseId);
+  const records = dbModule.getPresalesRecords(caseId);
+  assert.equal(presalesCase.customer, 'Örnek Kurum');
+  assert.equal(presalesCase.stage, 'spec_review');
+  assert.equal(records.length, 1);
+  assert.equal(records[0].complianceStatus, 'conditional');
+  assert.match(records[0].inclusionEvidence, /yalnız bir PSU/);
+  assert.equal(dbModule.getPresalesCaseMetrics(caseId).types.requirement, 1);
+
+  const page = await request(app).get(`/presales/${caseId}`).expect(200);
+  assert.match(page.text, /Kurum veri merkezi yenileme/);
+  assert.match(page.text, /Şartlı Uygun/);
+  assert.match(page.text, /4\/4 kanıt kapısı/);
+  assert.match(page.text, /Kritik · 11/);
+
+  const search = await request(app).get('/search?q=PSU-SKU-01').expect(200);
+  assert.match(search.text, /Kurum veri merkezi yenileme/);
+
+  const exported = await request(app).get(`/presales/${caseId}/export`).expect(200);
+  assert.equal(exported.body.case.id, caseId);
+  assert.equal(exported.body.records[0].sku, 'PSU-SKU-01');
+});
+
+test('presales hatırlatması terminden sonra planlanamaz', async () => {
+  const response = await request(app)
+    .post('/presales')
+    .type('form')
+    .send({
+      title: 'Geçersiz termin dosyası',
+      deadline: '2026-09-10T10:00',
+      reminderAt: '2026-09-10T11:00',
+    })
+    .expect(400);
+
+  assert.match(response.text, /Dosya hatırlatması zamanı son tarihten önce olmalı/);
+});
+
+test('presales dosya hatırlatması yerel bildirim olarak yalnızca bir kez gönderilir', async () => {
+  const presalesCase = dbModule.addPresalesCase({
+    title: 'Üretici teyit toplantısı',
+    customer: 'Yerel Bildirim Kurumu',
+    tenderReference: 'SA-NOTIFY-1',
+    deadline: '2026-08-21T09:00:00.000Z',
+    reminderAt: '2026-08-20T09:00:00.000Z',
+    nextAction: 'BOM ve lisans teyitlerini kapat',
+  });
+  const payloads = [];
+
+  await reminders.checkDueTasks(
+    new Date('2026-08-20T09:00:00.000Z'),
+    async (payload) => payloads.push(payload),
+  );
+  await reminders.checkDueTasks(
+    new Date('2026-08-20T09:01:00.000Z'),
+    async (payload) => payloads.push(payload),
+  );
+
+  const matching = payloads.filter((payload) => payload.message.includes(presalesCase.title));
+  assert.equal(matching.length, 1);
+  assert.match(matching[0].title, /Presales hatırlatması/);
+  assert.match(matching[0].message, /BOM ve lisans teyitlerini kapat/);
+  assert.ok(dbModule.getPresalesCase(presalesCase.id).reminderSentAt);
+});
+
 test('due reminders are sent once and then marked', async () => {
   const task = dbModule.addTask({
     title: 'Call the dentist',

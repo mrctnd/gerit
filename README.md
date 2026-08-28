@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-3c873a.svg)](https://nodejs.org/)
 
-**Gerit**, işlerini hızlıca yakalayıp yerine getirmen için tasarlanmış Türkçe, klavye odaklı ve yerel öncelikli kişisel görev yöneticisidir. Hesap, telemetri, reklam, iş birliği veya çevrimdışı eşitleme yoktur. Bütün veriniz yedekleyebileceğiniz tek bir SQLite dosyasında kalır.
+**Gerit**, görevlerini ve presales çalışmalarını tek yerde yürütmen için tasarlanmış Türkçe, klavye odaklı ve yerel öncelikli çalışma merkezidir. Hesap, telemetri, reklam, iş birliği veya çevrimdışı eşitleme yoktur. Bütün veriniz yedekleyebileceğiniz tek bir SQLite dosyasında kalır.
 
 Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 
@@ -29,6 +29,10 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Dört renk paleti, dört yerel font seti ve cihazda saklanan görünüm tercihleri
 - Butonlarda, görev tamamlamada ve görünüm panelinde ölçülü mikro etkileşimler; azaltılmış hareket modu
 - Masaüstünde yerel Windows bildirimi; isteğe bağlı olarak ntfy ile telefon bildirimi
+- Müşteri, ihale/fırsat referansı, üretici, ürün/model, rakip, termin ve teklif kararıyla Presales Merkezi
+- Şartname maddesi, BOM/kitlist, ürün kararı, rekabet, değişiklik talebi, şartname cevabı, maliyet ve üretici teyidi kayıtları
+- Platform kabiliyeti, BOM'a dahil olma, konfigürasyon uyumu ve lisans/servis entitlement kanıtlarını ayrı izleme
+- Standart uygunluk statüleri, risk puanı, sorumlu/aksiyon takibi, yerel hatırlatma ve dosya bazlı JSON dışa aktarma
 - Her terminalden `t add "..."` ile hızlı yakalama
 - Express + EJS + yerleşik `node:sqlite`; istemci çerçevesi ve bulut hesabı yok
 
@@ -38,7 +42,7 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 
 - Node.js, Docker, hesap veya internet bağlantısı gerekmez.
 - Uygulama yalnızca kendi bilgisayarınızdaki `127.0.0.1` adresini kullanır; yerel ağa açılmaz.
-- Görevler ve görünüm tercihleri `%APPDATA%\\Gerit\\data\\tasks.sqlite3` dosyasında tutulur ve başka bir bilgisayara gönderilmez.
+- Görevler, presales dosyaları ve görünüm tercihleri `%APPDATA%\\Gerit\\data\\tasks.sqlite3` dosyasında tutulur ve başka bir bilgisayara gönderilmez.
 - Masaüstü sürümünde hatırlatmalar ve günlük özet Windows bildirimi olarak yerel gönderilir.
 - Kaldırma işlemi veri dosyasını silmez. Yeniden kurduğunuzda görevleriniz kaldığı yerden açılır.
 - Kurulum paketi henüz kod imzalı değilse Windows SmartScreen ilk çalıştırmada yayıncı uyarısı gösterebilir.
@@ -118,6 +122,23 @@ call Sam tomorrow 4pm #home p2
 - İş notları çalışma günlüğüne zaman damgalı olarak eklenir ve genel aramada bulunur.
 - Tekrarlanan iş tamamlandığında sıradaki oluşum otomatik oluşturulur.
 
+## Presales Merkezi
+
+Sol menüdeki **Presales Merkezi**, her müşteri talebi veya ihale için ayrı bir çalışma dosyası açar. Dosyada müşteri ve referans bilgileri, üretici/ürün seçimi, rakipler, sorumlu, son tarih, sonraki aksiyon, mevcut satış aşaması ve `Teklif verilebilir / Şartlı / Verilemez` kararı tutulur.
+
+Her dosyanın altında aşağıdaki çalışma türleri ayrı kayıtlar olarak izlenir:
+
+- Şartname maddesi ve atomik gereksinim
+- BOM/kitlist satırı, SKU/feature code ve adet kontrolü
+- Ürün seçimi ve model kararı
+- Aynı segment rakip ve proje özelindeki farklılaştırıcılar
+- Mevcut metin, gerekçe ve önerilen metinle değişiklik talebi
+- Kısa kabul veya pozitif wording modunda şartname cevabı
+- Ek maliyet, yüklenici sorumluluğu ve teknik/ticari risk
+- Üretici sorusu, teyit ihtiyacı ve açık aksiyon
+
+Her kayıtta platform desteği, teklife dahil olma, konfigürasyon uyumu ve lisans/servis hakkı ayrı kanıt alanlarıdır. Durumlar `Uygun`, `Şartlı Uygun`, `Uygun Değil - Değişiklik Gerekli`, `Teyit / Netleştirme` ve `Kapsam Dışı` standardını kullanır. Olasılık, etki ve kanıt açığından risk puanı hesaplanır. Dosya ve kayıt hatırlatmaları Windows bildirimi olarak gönderilir; **JSON dışa aktar** işlemi dosyanın tüm alanlarını ve kayıtlarını yerel bir çıktıya alır.
+
 ## Klavye kısayolları
 
 | Tuş | İşlem |
@@ -176,7 +197,7 @@ Windows masaüstü kurulumunda varsayılan dosya:
 %APPDATA%\Gerit\data\tasks.sqlite3
 ```
 
-Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, hatırlatma durumları ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Gerit masaüstü sürümü görevleri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
+Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, presales dosyaları, analiz/kanıt kayıtları, hatırlatma durumları ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Gerit masaüstü sürümü bu verileri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
 
 Node.js kurulumunda varsayılan dosya:
 

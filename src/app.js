@@ -3,6 +3,8 @@ import express from 'express';
 import { appRoot, config } from './config.js';
 import {
   getAppearancePreferences,
+  addPresalesCase,
+  addPresalesRecord,
   addTaskNote,
   addTask,
   completeTask,
@@ -13,6 +15,13 @@ import {
   getInboxTasks,
   getProjectTasks,
   getProjects,
+  getPresalesCase,
+  getPresalesCaseMetrics,
+  getPresalesCases,
+  getPresalesDashboardSummary,
+  getPresalesExport,
+  getPresalesRecord,
+  getPresalesRecords,
   getTask,
   getTodayTasks,
   getUpcomingTasks,
@@ -21,8 +30,13 @@ import {
   getTaskNotes,
   healthCheck,
   reopenTask,
+  searchPresales,
   searchTasks,
   saveAppearancePreferences,
+  deletePresalesCase,
+  deletePresalesRecord,
+  updatePresalesCase,
+  updatePresalesRecord,
   updateTask,
 } from './db.js';
 import {
@@ -39,6 +53,19 @@ import {
 import { parseQuickAdd } from './parser.js';
 import { describeRecurrence, parseRecurrence } from './recurrence.js';
 import { publishNotification } from './reminders.js';
+import {
+  COMPLIANCE_STATUSES,
+  CONFIDENCE_LEVELS,
+  OFFERABILITY_STATUSES,
+  PRESALES_RECORD_TYPES,
+  PRESALES_STAGES,
+  RESPONSE_MODES,
+  complianceStatusMeta,
+  offerabilityMeta,
+  presalesRecordTypeMeta,
+  presalesStageMeta,
+  riskMeta,
+} from './presales.js';
 import { TASK_STATUSES, normalizeProgress, taskStatusMeta } from './workflow.js';
 
 export function createApp({ notificationPublisher } = {}) {
@@ -78,9 +105,14 @@ export function createApp({ notificationPublisher } = {}) {
   app.use((req, res, next) => {
     const today = todayRange();
     const upcoming = upcomingRange();
+    const reference = now();
     res.locals.projects = getProjects();
     res.locals.counts = getCounts(today.start, upcoming.end);
     res.locals.summary = getWorkSummary(today.start, today.end, new Date().toISOString());
+    res.locals.presalesSummary = getPresalesDashboardSummary(
+      reference.toUTC().toISO(),
+      reference.plus({ days: 7 }).toUTC().toISO(),
+    );
     res.locals.currentPath = req.path;
     res.locals.returnPath = req.originalUrl;
     res.locals.appearancePreferences = getAppearancePreferences();
@@ -90,6 +122,12 @@ export function createApp({ notificationPublisher } = {}) {
       notificationMode: config.desktopApp ? 'desktop' : config.ntfyTopic ? 'ntfy' : 'off',
     };
     res.locals.taskStatuses = TASK_STATUSES;
+    res.locals.presalesStages = PRESALES_STAGES;
+    res.locals.offerabilityStatuses = OFFERABILITY_STATUSES;
+    res.locals.presalesRecordTypes = PRESALES_RECORD_TYPES;
+    res.locals.complianceStatuses = COMPLIANCE_STATUSES;
+    res.locals.confidenceLevels = CONFIDENCE_LEVELS;
+    res.locals.responseModes = RESPONSE_MODES;
     res.locals.assetVersion = assetVersion;
     res.locals.encodeURIComponent = encodeURIComponent;
     res.locals.toDateTimeInput = toDateTimeInput;
@@ -115,13 +153,116 @@ export function createApp({ notificationPublisher } = {}) {
     try {
       const sent = await publishNotification({
         title: 'Gerit bildirimi hazır',
-        message: 'Hatırlatmalar ve günlük özet bu bilgisayarda yerel olarak gösterilecek.',
+        message: 'Görev ve presales hatırlatmaları bu bilgisayarda yerel olarak gösterilecek.',
         priority: '3',
         tags: 'bell,clipboard',
       }, notificationPublisher);
 
       if (!sent) throw new Error('Bildirimler etkin değil.');
       res.redirect(safeReturnTo(req.body.returnTo, '/today'));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/presales', (_req, res) => {
+    renderPage(res, {
+      title: 'Presales Merkezi',
+      kicker: 'Fırsat, şartname, BOM ve teklif takibi',
+      kind: 'presales-dashboard',
+      cases: getPresalesCases().map(decoratePresalesCase),
+    });
+  });
+
+  app.post('/presales', (req, res, next) => {
+    try {
+      const payload = presalesCasePayload(req.body);
+      validateReminder(payload.reminderAt, payload.deadline, 'Dosya hatırlatması');
+      const presalesCase = addPresalesCase(payload);
+      res.redirect(`/presales/${presalesCase.id}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/presales/:id/export', (req, res, next) => {
+    const data = getPresalesExport(Number(req.params.id));
+    if (!data) return next();
+    const name = fileSlug(data.case.title) || `dosya-${data.case.id}`;
+    res.setHeader('Content-Disposition', `attachment; filename="gerit-presales-${name}.json"`);
+    res.type('application/json').send(JSON.stringify(data, null, 2));
+  });
+
+  app.get('/presales/:id', (req, res, next) => {
+    const presalesCase = getPresalesCase(Number(req.params.id));
+    if (!presalesCase) return next();
+    renderPage(res, {
+      title: presalesCase.title,
+      kicker: [presalesCase.customer, presalesCase.tenderReference].filter(Boolean).join(' · ') || 'Presales dosyası',
+      kind: 'presales-case',
+      presalesCase: decoratePresalesCase(presalesCase),
+      records: getPresalesRecords(presalesCase.id).map(decoratePresalesRecord),
+      metrics: getPresalesCaseMetrics(presalesCase.id),
+    });
+  });
+
+  app.post('/presales/:id', (req, res, next) => {
+    try {
+      const id = Number(req.params.id);
+      const payload = presalesCasePayload(req.body);
+      validateReminder(payload.reminderAt, payload.deadline, 'Dosya hatırlatması');
+      const updated = updatePresalesCase(id, payload);
+      if (!updated) return next();
+      res.redirect(`/presales/${id}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:id/delete', (req, res, next) => {
+    try {
+      deletePresalesCase(Number(req.params.id));
+      res.redirect('/presales');
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:id/records', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.id);
+      const payload = presalesRecordPayload(req.body);
+      validateReminder(payload.reminderAt, payload.dueAt, 'Aksiyon hatırlatması');
+      const record = addPresalesRecord(caseId, payload);
+      if (!record) return next();
+      res.redirect(`/presales/${caseId}#record-${record.id}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:caseId/records/:recordId', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.caseId);
+      const recordId = Number(req.params.recordId);
+      const existing = getPresalesRecord(recordId);
+      if (!existing || existing.caseId !== caseId) return next();
+      const payload = presalesRecordPayload(req.body);
+      validateReminder(payload.reminderAt, payload.dueAt, 'Aksiyon hatırlatması');
+      updatePresalesRecord(recordId, payload);
+      res.redirect(`/presales/${caseId}#record-${recordId}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:caseId/records/:recordId/delete', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.caseId);
+      const record = getPresalesRecord(Number(req.params.recordId));
+      if (!record || record.caseId !== caseId) return next();
+      deletePresalesRecord(record.id);
+      res.redirect(`/presales/${caseId}`);
     } catch (error) {
       next(error);
     }
@@ -232,6 +373,7 @@ export function createApp({ notificationPublisher } = {}) {
       kicker: query ? 'Aramana uyan açık işler' : 'Başlık, not ve projelerde ara',
       kind: 'list',
       tasks: query ? decorateTasks(searchTasks(query)) : [],
+      presalesResults: query ? searchPresales(query).map(decoratePresalesCase) : [],
       searchQuery: query,
       emptyTitle: query ? 'Eşleşme bulunamadı' : 'Yukarıdan aramaya başla',
       emptyCopy: query ? 'Daha kısa bir ifade, not ya da proje adı deneyebilirsin.' : 'Herhangi bir ekranda / tuşuyla aramaya geçebilirsin.',
@@ -368,10 +510,11 @@ export function createApp({ notificationPublisher } = {}) {
   });
 
   app.use((error, _req, res, _next) => {
-    const badRequest = error.message?.includes('gerekli')
-      || error.message?.includes('RRULE')
-      || error.message?.includes('Hatırlatma')
-      || error.message?.includes('Bildirim');
+    const message = error.message || '';
+    const badRequest = message.includes('gerekli')
+      || message.includes('RRULE')
+      || message.toLocaleLowerCase('tr-TR').includes('hatırlatma')
+      || message.includes('Bildirim');
     if (!badRequest) console.error(error);
     res.status(badRequest ? 400 : 500);
     renderPage(res, {
@@ -402,6 +545,79 @@ function decorateTask(task) {
   };
 }
 
+function decoratePresalesCase(presalesCase) {
+  return {
+    ...presalesCase,
+    deadlineMeta: dueMeta(presalesCase.deadline),
+    reminderMeta: dueMeta(presalesCase.reminderAt),
+    stageMeta: presalesStageMeta(presalesCase.stage),
+    offerabilityMeta: offerabilityMeta(presalesCase.offerability),
+  };
+}
+
+function decoratePresalesRecord(record) {
+  return {
+    ...record,
+    typeMeta: presalesRecordTypeMeta(record.recordType),
+    complianceMeta: complianceStatusMeta(record.complianceStatus),
+    risk: riskMeta(record.riskProbability, record.riskImpact, record.evidenceGap),
+    dueMeta: dueMeta(record.dueAt),
+    reminderMeta: dueMeta(record.reminderAt),
+  };
+}
+
+function presalesCasePayload(body) {
+  return {
+    title: body.title,
+    customer: body.customer,
+    tenderReference: body.tenderReference,
+    stage: body.stage,
+    offerability: body.offerability,
+    owner: body.owner,
+    manufacturer: body.manufacturer,
+    productFamily: body.productFamily,
+    proposedModel: body.proposedModel,
+    competitors: body.competitors,
+    deadline: toUtcIso(body.deadline),
+    reminderAt: toUtcIso(body.reminderAt),
+    nextAction: body.nextAction,
+    notes: body.notes,
+  };
+}
+
+function presalesRecordPayload(body) {
+  return {
+    recordType: body.recordType,
+    referenceNo: body.referenceNo,
+    title: body.title,
+    originalText: body.originalText,
+    requirement: body.requirement,
+    offeredItem: body.offeredItem,
+    sku: body.sku,
+    quantity: body.quantity,
+    complianceStatus: body.complianceStatus,
+    capabilityEvidence: body.capabilityEvidence,
+    inclusionEvidence: body.inclusionEvidence,
+    compatibilityEvidence: body.compatibilityEvidence,
+    entitlementEvidence: body.entitlementEvidence,
+    sourceRef: body.sourceRef,
+    responseMode: body.responseMode,
+    responseText: body.responseText,
+    proposedText: body.proposedText,
+    costImpact: body.costImpact,
+    responsibility: body.responsibility,
+    action: body.action,
+    owner: body.owner,
+    dueAt: toUtcIso(body.dueAt),
+    reminderAt: toUtcIso(body.reminderAt),
+    confidence: body.confidence,
+    riskProbability: body.riskProbability,
+    riskImpact: body.riskImpact,
+    evidenceGap: body.evidenceGap,
+    notes: body.notes,
+  };
+}
+
 function renderPage(res, view) {
   res.render('index', { view });
 }
@@ -411,8 +627,19 @@ function safeReturnTo(value, fallback) {
   return pathValue.startsWith('/') && !pathValue.startsWith('//') ? pathValue : fallback;
 }
 
-function validateReminder(reminderAt, dueAt) {
+function validateReminder(reminderAt, dueAt, label = 'Hatırlatma') {
   if (reminderAt && dueAt && reminderAt >= dueAt) {
-    throw new Error('Hatırlatma zamanı son tarihten önce olmalı.');
+    throw new Error(`${label} zamanı son tarihten önce olmalı.`);
   }
+}
+
+function fileSlug(value) {
+  return String(value || '')
+    .toLocaleLowerCase('tr-TR')
+    .replaceAll('ı', 'i')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60);
 }

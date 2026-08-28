@@ -13,7 +13,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="İşlerini hızlı, sade ve güvenli biçimde yöneten kişisel görev merkezi.">
+    <meta name="description" content="Görev ve presales çalışmalarını yerel olarak yöneten kişisel çalışma merkezi.">
     <meta name="theme-color" content="<%= themeColors[appearance.theme] || themeColors.atlas %>">
     <title><%= view.title %> · Gerit</title>
     <link rel="icon" type="image/png" href="/brand/gerit-mark.png">
@@ -30,11 +30,16 @@
           <span class="brand-mark" aria-hidden="true"><img src="/brand/gerit-mark.png" alt=""></span>
           <span>
             <strong>Gerit</strong>
-            <small>işlerini yerine getir</small>
+            <small>görev ve presales merkezi</small>
           </span>
         </a>
 
         <nav class="primary-nav" aria-label="İş görünümleri">
+          <a class="nav-item presales-nav <%= currentPath.startsWith('/presales') ? 'active' : '' %>" href="/presales">
+            <span class="nav-icon" aria-hidden="true">◆</span>
+            <span>Presales Merkezi</span>
+            <% if (presalesSummary.active) { %><span class="nav-count"><%= presalesSummary.active %></span><% } %>
+          </a>
           <a class="nav-item <%= currentPath === '/today' ? 'active' : '' %>" href="/today">
             <span class="nav-icon" aria-hidden="true">●</span>
             <span>Bugün</span>
@@ -124,7 +129,7 @@
               <p class="eyebrow"><%= view.kicker %></p>
               <h1><%= view.title %></h1>
             </div>
-            <% if (view.kind !== 'edit') { %>
+            <% if (!['edit', 'presales-dashboard', 'presales-case'].includes(view.kind)) { %>
               <p class="page-hint"><kbd>N</kbd> ile ekle · <kbd>X</kbd> ile tamamla</p>
             <% } %>
           </section>
@@ -159,7 +164,7 @@
             </section>
           <% } %>
 
-          <% if (view.kind !== 'edit' && view.kind !== 'message') { %>
+          <% if (!['edit', 'message', 'presales-dashboard', 'presales-case'].includes(view.kind)) { %>
             <section class="quick-add-card" aria-labelledby="quick-add-title">
               <form action="/tasks" method="post" id="quick-add-form">
                 <input type="hidden" name="returnTo" value="<%= returnPath %>">
@@ -202,11 +207,15 @@
           <section class="task-surface" aria-live="polite">
             <% if (view.kind === 'edit') { %>
               <%- include('partials/edit-task', { task: view.task, taskNotes: view.taskNotes, returnTo: view.returnTo }) %>
+            <% } else if (view.kind === 'presales-dashboard') { %>
+              <%- include('partials/presales-dashboard', { cases: view.cases }) %>
+            <% } else if (view.kind === 'presales-case') { %>
+              <%- include('partials/presales-case', { presalesCase: view.presalesCase, records: view.records, metrics: view.metrics }) %>
             <% } else { %>
               <% const groups = view.kind === 'grouped' ? view.groups : [{ title: null, tone: 'default', tasks: view.tasks || [] }]; %>
               <% const totalTasks = groups.reduce((sum, group) => sum + group.tasks.length, 0); %>
 
-              <% if (!totalTasks) { %>
+              <% if (!totalTasks && !(view.presalesResults && view.presalesResults.length)) { %>
                 <div class="empty-state">
                   <span aria-hidden="true">✓</span>
                   <h2><%= view.emptyTitle %></h2>
@@ -231,6 +240,22 @@
                     </section>
                   <% } %>
                 <% }) %>
+              <% } %>
+              <% if (view.presalesResults && view.presalesResults.length) { %>
+                <section class="presales-search-results" aria-labelledby="presales-search-title">
+                  <div class="group-heading">
+                    <h2 id="presales-search-title">Presales dosyaları</h2>
+                    <span><%= view.presalesResults.length %></span>
+                  </div>
+                  <div class="presales-case-list">
+                    <% view.presalesResults.forEach((presalesCase) => { %>
+                      <a class="presales-case-row" href="/presales/<%= presalesCase.id %>">
+                        <span><strong><%= presalesCase.title %></strong><small><%= [presalesCase.customer, presalesCase.tenderReference].filter(Boolean).join(' · ') || 'Presales dosyası' %></small></span>
+                        <span class="status-chip status-<%= presalesCase.stageMeta.tone %>"><%= presalesCase.stageMeta.label %></span>
+                      </a>
+                    <% }) %>
+                  </div>
+                </section>
               <% } %>
             <% } %>
           </section>

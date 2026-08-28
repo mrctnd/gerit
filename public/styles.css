@@ -145,7 +145,7 @@ button {
 
 .brand strong {
   display: block;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-size: 16px;
 }
 
@@ -475,9 +475,9 @@ kbd {
 h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(38px, 4.5vw, 52px);
+  font-size: 52px;
   font-weight: 780;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -531,7 +531,7 @@ h1 {
   color: #183b56;
   font-size: 26px;
   line-height: 1;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 .work-summary small {
@@ -1339,7 +1339,7 @@ h1 {
   color: var(--ink);
   font-family: var(--font-display);
   font-size: 23px;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 .activity-heading > span {
@@ -2091,8 +2091,8 @@ button:active,
 .appearance-header h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(22px, 3vw, 29px);
-  letter-spacing: -0.035em;
+  font-size: 29px;
+  letter-spacing: 0;
 }
 
 .appearance-close {
@@ -2462,5 +2462,561 @@ html[data-motion="reduced"] *::after {
   .appearance-footer {
     align-items: flex-start;
     padding: 16px 18px 19px;
+  }
+}
+
+/* Presales workspace */
+.presales-nav {
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.presales-dashboard,
+.presales-case-page {
+  display: grid;
+  gap: 26px;
+}
+
+.presales-summary,
+.presales-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.presales-summary article,
+.presales-metrics article {
+  min-width: 0;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.presales-summary span,
+.presales-summary small,
+.presales-metrics span,
+.presales-metrics small {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presales-summary span,
+.presales-metrics span {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.presales-summary strong,
+.presales-metrics strong {
+  display: block;
+  margin: 6px 0 3px;
+  color: var(--ink);
+  font-size: 25px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.presales-summary small,
+.presales-metrics small {
+  font-size: 9px;
+}
+
+.presales-summary .summary-danger,
+.presales-metrics .summary-danger {
+  background: var(--red-soft);
+  border-color: #efc9c3;
+}
+
+.presales-summary .summary-danger strong,
+.presales-metrics .summary-danger strong,
+.text-danger {
+  color: var(--red);
+}
+
+.presales-summary .summary-active,
+.presales-metrics .summary-active {
+  background: #eef7fb;
+  border-color: #cde1eb;
+}
+
+.presales-summary .summary-success,
+.presales-metrics .summary-success {
+  background: #effaf5;
+  border-color: #cce7da;
+}
+
+.presales-section {
+  min-width: 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.presales-section-heading,
+.presales-case-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.presales-section-heading h2,
+.presales-record-group h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 19px;
+  letter-spacing: 0;
+}
+
+.presales-case-list,
+.presales-record-list {
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.presales-case-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, auto);
+  align-items: center;
+  gap: 20px;
+  min-height: 88px;
+  padding: 15px 18px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.presales-case-row:last-child {
+  border-bottom: 0;
+}
+
+.presales-case-row:hover {
+  background: #f8fbfc;
+}
+
+.presales-case-row.is-overdue {
+  border-left: 3px solid var(--red);
+}
+
+.presales-case-main,
+.presales-case-health,
+.record-summary-main,
+.record-summary-health {
+  min-width: 0;
+}
+
+.presales-case-main > strong,
+.record-summary-main > strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.presales-case-main > small,
+.record-summary-main > small {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presales-inline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.presales-inline-meta span {
+  padding: 3px 7px;
+  color: #526778;
+  background: #eef3f6;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.presales-case-health,
+.record-summary-health {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.presales-case-health small,
+.record-summary-health small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.presales-empty {
+  padding: 28px;
+  color: var(--muted);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px dashed #c8d5dd;
+  border-radius: 8px;
+}
+
+.presales-empty h3,
+.presales-empty p {
+  margin: 0;
+}
+
+.presales-empty h3 {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.presales-empty p {
+  margin-top: 7px;
+  font-size: 11px;
+}
+
+.presales-form {
+  display: grid;
+  gap: 22px;
+}
+
+.presales-form-grid,
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.presales-form-grid .field-wide,
+.evidence-grid .field-wide {
+  grid-column: 1 / -1;
+}
+
+.presales-create {
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.presales-case-actions {
+  justify-content: flex-start;
+  margin-bottom: -6px;
+}
+
+.presales-case-hero {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.presales-case-hero > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.presales-case-hero dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0 0;
+}
+
+.presales-case-hero dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.presales-case-hero dd {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.presales-case-hero p {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  background: #eef7fb;
+  border-left: 3px solid var(--blue);
+  font-size: 11px;
+}
+
+.presales-case-editor {
+  padding: 0;
+}
+
+.presales-case-editor > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.presales-case-editor > summary::-webkit-details-marker,
+.presales-record > summary::-webkit-details-marker {
+  display: none;
+}
+
+.presales-case-editor > summary strong,
+.presales-case-editor > summary small {
+  display: block;
+}
+
+.presales-case-editor > summary strong {
+  font-size: 14px;
+}
+
+.presales-case-editor > summary small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.presales-case-editor > form {
+  padding: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.workstream-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 24px;
+}
+
+.workstream-strip a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+  color: var(--muted);
+  text-decoration: none;
+  background: #f4f7f8;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.workstream-strip a:hover {
+  color: var(--ink);
+  border-color: #adbdc7;
+}
+
+.workstream-strip strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.presales-record-group {
+  margin-top: 26px;
+  scroll-margin-top: 80px;
+}
+
+.presales-record-group .group-heading {
+  margin-bottom: 8px;
+}
+
+.presales-record {
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 80px;
+}
+
+.presales-record:last-child {
+  border-bottom: 0;
+}
+
+.presales-record > summary {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) minmax(210px, auto);
+  align-items: center;
+  gap: 14px;
+  min-height: 80px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.presales-record[open] > summary {
+  background: #f5f9fa;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-reference {
+  overflow: hidden;
+  color: var(--accent-strong);
+  font-family: var(--font-code);
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+}
+
+.risk-chip {
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.risk-blocked {
+  color: #a83333;
+  background: #fde8e6;
+}
+
+.risk-waiting {
+  color: #985b12;
+  background: #fff1da;
+}
+
+.risk-active {
+  color: #245f82;
+  background: #e7f3f8;
+}
+
+.risk-completed {
+  color: #1d7155;
+  background: #e5f6ee;
+}
+
+.presales-record-body {
+  padding: 22px;
+  background: #fbfcfc;
+}
+
+.presales-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 20px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.presales-fieldset legend {
+  padding: 0 10px 0 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.presales-record-form .field textarea {
+  min-height: 86px;
+}
+
+.presales-delete {
+  margin-top: 18px;
+}
+
+.presales-danger-zone {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.presales-search-results {
+  margin-top: 28px;
+}
+
+@media (max-width: 1000px) {
+  .presales-summary,
+  .presales-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workstream-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .presales-summary,
+  .presales-metrics,
+  .presales-form-grid,
+  .evidence-grid,
+  .presales-case-hero dl {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .presales-case-row,
+  .presales-record > summary {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .presales-case-health,
+  .record-summary-health {
+    align-items: flex-start;
+  }
+
+  .record-reference {
+    max-width: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .primary-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .nav-item {
+    min-height: 44px;
+  }
+
+  .main-content {
+    min-height: calc(100vh - 112px);
+  }
+}
+
+@media (max-width: 520px) {
+  .presales-summary,
+  .presales-metrics,
+  .presales-form-grid,
+  .evidence-grid,
+  .presales-case-hero dl,
+  .workstream-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .presales-section-heading,
+  .presales-case-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .presales-section-heading .primary-button,
+  .presales-case-actions .secondary-button {
+    width: 100%;
+  }
+
+  .presales-create,
+  .presales-record-body,
+  .presales-case-editor > form {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  .primary-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

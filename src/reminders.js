@@ -4,9 +4,11 @@ import { dueMeta, now, todayRange, digestDate } from './dates.js';
 import {
   getAppPreference,
   getCustomReminders,
+  getDuePresalesReminders,
   getDueForReminder,
   getTodayTasks,
   markCustomReminded,
+  markPresalesReminded,
   markReminded,
   saveAppPreference,
 } from './db.js';
@@ -93,6 +95,21 @@ export async function checkDueTasks(reference = new Date(), publisher) {
       tags: 'alarm_clock,white_check_mark',
     }, activePublisher);
     markReminded(task.id);
+    sent += 1;
+  }
+
+  const presalesReminders = getDuePresalesReminders(referenceIso);
+  for (const item of presalesReminders) {
+    const due = dueMeta(item.dueAt);
+    const suffix = [item.referenceNo, due.label].filter(Boolean).join(' · ');
+    const details = [item.customer, item.caseTitle, item.action].filter(Boolean).join('\n');
+    await deliverNotification({
+      title: suffix ? `Presales hatırlatması · ${suffix}` : 'Presales hatırlatması',
+      message: details ? `${item.title}\n${details}` : item.title,
+      priority: '4',
+      tags: 'briefcase,bell',
+    }, activePublisher);
+    markPresalesReminded(item.kind, item.id);
     sent += 1;
   }
 

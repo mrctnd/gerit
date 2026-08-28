@@ -1,0 +1,126 @@
+<div class="presales-case-page">
+  <nav class="presales-case-actions" aria-label="Presales dosya işlemleri">
+    <a class="secondary-button" href="/presales">← Portföye dön</a>
+    <a class="secondary-button" href="/presales/<%= presalesCase.id %>/export" download>JSON dışa aktar</a>
+  </nav>
+
+  <section class="presales-case-hero" aria-label="Dosya durumu">
+    <div>
+      <span class="status-chip status-<%= presalesCase.stageMeta.tone %>"><%= presalesCase.stageMeta.label %></span>
+      <span class="status-chip status-<%= presalesCase.offerabilityMeta.tone %>"><%= presalesCase.offerabilityMeta.label %></span>
+    </div>
+    <dl>
+      <div><dt>Müşteri</dt><dd><%= presalesCase.customer || 'Belirtilmedi' %></dd></div>
+      <div><dt>Referans</dt><dd><%= presalesCase.tenderReference || 'Belirtilmedi' %></dd></div>
+      <div><dt>Teklif</dt><dd><%= [presalesCase.manufacturer, presalesCase.proposedModel].filter(Boolean).join(' · ') || 'Ürün seçilmedi' %></dd></div>
+      <div><dt>Son tarih</dt><dd class="<%= presalesCase.deadlineMeta.overdue ? 'text-danger' : '' %>"><%= presalesCase.deadlineMeta.label || 'Tarih verilmedi' %></dd></div>
+    </dl>
+    <% if (presalesCase.nextAction) { %><p><strong>Sonraki aksiyon:</strong> <%= presalesCase.nextAction %></p><% } %>
+  </section>
+
+  <section class="presales-metrics" aria-label="Dosya analiz özeti">
+    <article><span>Toplam kayıt</span><strong><%= metrics.total %></strong><small>tüm çalışma türleri</small></article>
+    <article><span>Değerlendirilen</span><strong><%= metrics.assessed %></strong><small>kapsam dışı hariç</small></article>
+    <article class="summary-success"><span>Uygun / tamam</span><strong><%= metrics.compliant %></strong><small>kanıtlanan kayıt</small></article>
+    <article class="<%= metrics.counts.noncompliant ? 'summary-danger' : '' %>"><span>Uygunsuz</span><strong><%= metrics.counts.noncompliant || 0 %></strong><small>değişiklik gerekli</small></article>
+    <article class="<%= metrics.counts.clarification ? 'summary-active' : '' %>"><span>Teyit</span><strong><%= metrics.counts.clarification || 0 %></strong><small>netleştirme bekliyor</small></article>
+  </section>
+
+  <details class="presales-section presales-case-editor">
+    <summary>
+      <span><strong>Dosya bilgileri</strong><small>Müşteri, ürün, aşama, termin ve teklif kararını güncelle</small></span>
+      <span aria-hidden="true">⌄</span>
+    </summary>
+    <form action="/presales/<%= presalesCase.id %>" method="post" class="presales-form">
+      <div class="presales-form-grid">
+        <label class="field field-wide"><span>Dosya / proje adı</span><input name="title" value="<%= presalesCase.title %>" required></label>
+        <label class="field"><span>Müşteri / kurum</span><input name="customer" value="<%= presalesCase.customer %>"></label>
+        <label class="field"><span>İhale / fırsat referansı</span><input name="tenderReference" value="<%= presalesCase.tenderReference %>"></label>
+        <label class="field">
+          <span>Mevcut aşama</span>
+          <select name="stage"><% presalesStages.forEach((stage) => { %><option value="<%= stage.value %>" <%= presalesCase.stage === stage.value ? 'selected' : '' %>><%= stage.label %></option><% }) %></select>
+        </label>
+        <label class="field">
+          <span>Teklif kararı</span>
+          <select name="offerability"><% offerabilityStatuses.forEach((status) => { %><option value="<%= status.value %>" <%= presalesCase.offerability === status.value ? 'selected' : '' %>><%= status.label %></option><% }) %></select>
+        </label>
+        <label class="field"><span>Üretici / marka</span><input name="manufacturer" value="<%= presalesCase.manufacturer %>"></label>
+        <label class="field"><span>Ürün ailesi / kategori</span><input name="productFamily" value="<%= presalesCase.productFamily %>"></label>
+        <label class="field"><span>Teklif edilen model</span><input name="proposedModel" value="<%= presalesCase.proposedModel %>"></label>
+        <label class="field"><span>Sorumlu</span><input name="owner" value="<%= presalesCase.owner %>"></label>
+        <label class="field"><span>Son teslim tarihi</span><input name="deadline" type="datetime-local" value="<%= toDateTimeInput(presalesCase.deadline) %>"></label>
+        <label class="field"><span>Dosya hatırlatması</span><input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(presalesCase.reminderAt) %>"><small>Son teslim tarihinden önce olmalı</small></label>
+        <label class="field field-wide"><span>Rakipler / alternatifler</span><input name="competitors" value="<%= presalesCase.competitors %>"></label>
+        <label class="field field-wide"><span>Sonraki aksiyon</span><input name="nextAction" value="<%= presalesCase.nextAction %>"></label>
+        <label class="field field-wide"><span>Dosya notları</span><textarea name="notes" rows="4"><%= presalesCase.notes %></textarea></label>
+      </div>
+      <div class="form-actions"><button class="primary-button" type="submit">Dosyayı güncelle</button></div>
+    </form>
+  </details>
+
+  <section class="presales-section" aria-labelledby="workstreams-title">
+    <div class="presales-section-heading">
+      <div><p class="eyebrow">Çalışma defteri</p><h2 id="workstreams-title">Analiz ve teklif kayıtları</h2></div>
+      <a class="primary-button" href="#new-presales-record">Yeni kayıt</a>
+    </div>
+    <div class="workstream-strip" aria-label="Çalışma türü sayıları">
+      <% presalesRecordTypes.forEach((type) => { %>
+        <a href="#records-<%= type.value %>"><span><%= type.label %></span><strong><%= metrics.types[type.value] || 0 %></strong></a>
+      <% }) %>
+    </div>
+
+    <% if (!records.length) { %>
+      <div class="presales-empty"><h3>Henüz analiz kaydı yok</h3><p>İlk şartname maddesini, BOM bulgusunu veya üretici sorusunu aşağıdan ekle.</p></div>
+    <% } %>
+
+    <% presalesRecordTypes.forEach((type) => { %>
+      <% const typeRecords = records.filter((record) => record.recordType === type.value); %>
+      <% if (typeRecords.length) { %>
+        <section class="presales-record-group" id="records-<%= type.value %>" aria-labelledby="records-title-<%= type.value %>">
+          <div class="group-heading"><h3 id="records-title-<%= type.value %>"><%= type.label %></h3><span><%= typeRecords.length %></span></div>
+          <div class="presales-record-list">
+            <% typeRecords.forEach((record) => { %>
+              <% const evidenceCount = [record.capabilityEvidence, record.inclusionEvidence, record.compatibilityEvidence, record.entitlementEvidence].filter(Boolean).length; %>
+              <details class="presales-record" id="record-<%= record.id %>">
+                <summary>
+                  <span class="record-reference"><%= record.referenceNo || '—' %></span>
+                  <span class="record-summary-main"><strong><%= record.title %></strong><small><%= [record.offeredItem, record.sku].filter(Boolean).join(' · ') || 'Teklif karşılığı bekleniyor' %></small></span>
+                  <span class="record-summary-health">
+                    <span class="status-chip status-<%= record.complianceMeta.tone %>"><%= record.complianceMeta.label %></span>
+                    <span class="risk-chip risk-<%= record.risk.tone %>"><%= record.risk.label %> · <%= record.risk.score %></span>
+                    <small><%= evidenceCount %>/4 kanıt kapısı<%= record.dueMeta.label ? ` · ${record.dueMeta.label}` : '' %></small>
+                  </span>
+                </summary>
+                <div class="presales-record-body">
+                  <form action="/presales/<%= presalesCase.id %>/records/<%= record.id %>" method="post" class="presales-form presales-record-form">
+                    <%- include('presales-record-fields', { record }) %>
+                    <div class="form-actions"><button class="primary-button" type="submit">Kaydı güncelle</button></div>
+                  </form>
+                  <form action="/presales/<%= presalesCase.id %>/records/<%= record.id %>/delete" method="post" class="delete-form presales-delete" data-confirm="Bu presales kaydı kalıcı olarak silinsin mi?">
+                    <button type="submit">Kaydı sil</button>
+                  </form>
+                </div>
+              </details>
+            <% }) %>
+          </div>
+        </section>
+      <% } %>
+    <% }) %>
+  </section>
+
+  <section class="presales-section presales-create" id="new-presales-record" aria-labelledby="new-record-title">
+    <div class="presales-section-heading">
+      <div><p class="eyebrow">Yeni bulgu</p><h2 id="new-record-title">Analiz kaydı ekle</h2></div>
+    </div>
+    <form action="/presales/<%= presalesCase.id %>/records" method="post" class="presales-form presales-record-form">
+      <%- include('presales-record-fields', { record: null }) %>
+      <div class="form-actions"><button class="primary-button" type="submit">Kaydı ekle</button></div>
+    </form>
+  </section>
+
+  <section class="presales-danger-zone">
+    <form action="/presales/<%= presalesCase.id %>/delete" method="post" class="delete-form" data-confirm="Bu presales dosyası ve içindeki tüm kayıtlar kalıcı olarak silinsin mi?">
+      <button type="submit">Presales dosyasını sil</button>
+    </form>
+  </section>
+</div>

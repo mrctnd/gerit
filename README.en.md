@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-3c873a.svg)](https://nodejs.org/)
 
-**Gerit** is a Turkish, keyboard-first, local-first personal task manager for capturing and completing work without an account or cloud dependency. There is no telemetry, advertising, collaboration, or offline sync. All task data stays in one SQLite file you control.
+**Gerit** is a Turkish, keyboard-first, local-first workspace for tasks and presales delivery without an account or cloud dependency. There is no telemetry, advertising, collaboration, or offline sync. All data stays in one SQLite file you control.
 
 The name comes from the Latin *gerere*: “to carry out” or “to accomplish.”
 
@@ -28,6 +28,10 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - Four color palettes, four local font sets, and device-local appearance preferences
 - Restrained micro-interactions for buttons, completion, and appearance controls, plus reduced motion
 - Local Windows notifications on desktop, with optional ntfy phone notifications
+- A Presales Center for customer/opportunity data, tender references, vendors, products, competitors, deadlines, and bid decisions
+- Detailed records for specification clauses, BOM/kitlists, product decisions, competition, change requests, responses, cost risks, and vendor questions
+- Separate evidence gates for platform capability, quoted inclusion, configuration compatibility, and license/service entitlement
+- Standard compliance statuses, scored risk, owners/actions, local reminders, and per-case JSON export
 - Terminal capture with `t add "..."`
 - Server-rendered Express + EJS UI and the built-in `node:sqlite` module
 
@@ -39,7 +43,7 @@ Download `Gerit-Setup-<version>-x64.exe` from [Releases](https://github.com/mrct
 
 - No Node.js, Docker, account, or internet connection is required.
 - The app listens only on `127.0.0.1` on your computer and is not exposed to the local network.
-- Tasks and appearance preferences stay in `%APPDATA%\\Gerit\\data\\tasks.sqlite3` and are not sent to another computer.
+- Tasks, presales cases, and appearance preferences stay in `%APPDATA%\\Gerit\\data\\tasks.sqlite3` and are not sent to another computer.
 - Reminders and the daily digest are delivered as local Windows notifications in the desktop app.
 - Uninstalling preserves the data file, so reinstalling restores the same tasks.
 - Until release binaries are code-signed, Windows SmartScreen may show an unknown-publisher warning.
@@ -96,6 +100,12 @@ water plants every mon,thu 9am #home p3
 
 Tasks without a date go to Inbox. The task detail screen tracks stage, progress, deadline, a custom reminder, and timestamped work notes. Completing a recurring task creates the next occurrence automatically.
 
+## Presales Center
+
+Use **Presales Merkezi** in the sidebar to open a separate case for each customer request, tender, or opportunity. A case tracks the customer and reference, vendor and proposed product, competitors, owner, deadline, next action, sales stage, and the current bid/no-bid decision.
+
+Case records cover specification clauses, atomic requirements, BOM/kitlist lines and quantities, product selection, same-segment competition, change requests, specification responses, cost/responsibility risks, and vendor confirmations. Platform capability, quoted inclusion, configuration compatibility, and license/service entitlement are stored as independent evidence gates. Records use the Turkish compliance standard (`Uygun`, `Şartlı Uygun`, `Uygun Değil - Değişiklik Gerekli`, `Teyit / Netleştirme`, and `Kapsam Dışı`), calculate priority from probability, impact, and evidence gap, and can trigger local Windows reminders. JSON export includes the full case and all records.
+
 ## Personalize the interface
 
 Use the **Görünüm** button in the top bar or press `g`. Choose between Atlas, Forest, Violet, and Ember palettes; Modern, Humanist, Editorial, and Technical font sets; and system, full, or reduced motion.
@@ -126,7 +136,7 @@ The Windows desktop installer stores the database here by default:
 %APPDATA%\Gerit\data\tasks.sqlite3
 ```
 
-Each Windows user gets a separate local database. Tasks, work notes, reminder state, and appearance preferences are persisted in the same SQLite file. The desktop app does not send task data to the cloud, and notifications are shown locally by Windows.
+Each Windows user gets a separate local database. Tasks, work notes, presales cases and evidence records, reminder state, and appearance preferences are persisted in the same SQLite file. The desktop app does not send this data to the cloud, and notifications are shown locally by Windows.
 
 The default Node.js database is `data/tasks.sqlite3`. Override it with `DATABASE_PATH`.
 

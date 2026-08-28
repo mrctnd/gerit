@@ -4,6 +4,25 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ## [Yayımlanmadı]
 
+## [0.2.0] - 2026-08-28
+
+### Eklendi
+
+- Müşteri, ihale/fırsat referansı, üretici, ürün ailesi, teklif edilen model, rakip, sorumlu, termin, sonraki aksiyon ve teklif verilebilirlik kararı tutan Presales Merkezi.
+- Şartname maddesi, BOM/kitlist bulgusu, ürün kararı, rekabet, değişiklik talebi, şartname cevabı, maliyet/sorumluluk ve üretici sorusu için sekiz ayrı kayıt türü.
+- Her analiz kaydında platform kabiliyeti, BOM'a dahil olma, konfigürasyon uyumluluğu ve lisans/servis entitlement kanıtlarını ayrı izleyen dört kanıt kapısı.
+- `Uygun`, `Şartlı Uygun`, `Uygun Değil - Değişiklik Gerekli`, `Teyit / Netleştirme` ve `Kapsam Dışı` statüleri.
+- Olasılık, etki ve kanıt açığına göre Kritik/Yüksek/Orta/Düşük risk puanlaması.
+- Madde/SKU/adet, orijinal metin, atomik gereksinim, teklif karşılığı, cevap modu, önerilen değişiklik, maliyet, sorumluluk, aksiyon ve güven seviyesi alanları.
+- Presales dosyası ve kayıt aksiyonları için yerel masaüstü hatırlatmaları.
+- Presales içeriğini genel aramada bulma ve dosya bazında eksiksiz JSON dışa aktarma.
+- Presales veri geçişi, kalıcılık, kanıt, arama, dışa aktarma, validasyon ve tek seferlik bildirim testleri.
+
+### Değişti
+
+- Gerit, kişisel görev yöneticisinin yanında presales ve solution architecture iş akışlarını da aynı yerel SQLite dosyasında yönetir.
+- Sol menü ve responsive arayüz, yoğun presales portföyü ve analiz kayıtları için genişletildi.
+
 ## [0.1.1] - 2026-08-28
 
 ### Eklendi
@@ -46,5 +65,6 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 - Docker, GitHub Actions, Linux VM ve otomatik SQLite yedekleme dosyaları.
 - MIT lisansı ve açık kaynak katkı belgeleri.
 
+[0.2.0]: https://github.com/mrctnd/gerit/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mrctnd/gerit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mrctnd/gerit/releases/tag/v0.1.0

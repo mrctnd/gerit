@@ -1,0 +1,163 @@
+<%
+  const item = record || {};
+  const isSelected = (key, value, fallback = '') => (item[key] || fallback) === value ? 'selected' : '';
+%>
+<div class="presales-form-grid record-core-fields">
+  <label class="field">
+    <span>Kayıt türü</span>
+    <select name="recordType">
+      <% presalesRecordTypes.forEach((type) => { %><option value="<%= type.value %>" <%= isSelected('recordType', type.value, 'requirement') %>><%= type.label %></option><% }) %>
+    </select>
+  </label>
+  <label class="field">
+    <span>Madde / satır no</span>
+    <input name="referenceNo" value="<%= item.referenceNo || '' %>" placeholder="3.2.1, BOM-14, CR-02">
+  </label>
+  <label class="field field-wide">
+    <span>Kayıt başlığı</span>
+    <input name="title" value="<%= item.title || '' %>" required placeholder="Tek ölçülebilir koşul veya bulgu">
+  </label>
+  <label class="field">
+    <span>Durum</span>
+    <select name="complianceStatus">
+      <% complianceStatuses.forEach((status) => { %><option value="<%= status.value %>" <%= isSelected('complianceStatus', status.value, 'unreviewed') %>><%= status.label %></option><% }) %>
+    </select>
+  </label>
+  <label class="field">
+    <span>Güven seviyesi</span>
+    <select name="confidence">
+      <% confidenceLevels.forEach((level) => { %><option value="<%= level.value %>" <%= isSelected('confidence', level.value, 'medium') %>><%= level.label %></option><% }) %>
+    </select>
+  </label>
+</div>
+
+<fieldset class="presales-fieldset">
+  <legend>Gereksinim ve teklif karşılığı</legend>
+  <div class="presales-form-grid">
+    <label class="field field-wide">
+      <span>Orijinal madde / mevcut hali</span>
+      <textarea name="originalText" rows="4" placeholder="Kaynak metni numarası ve kapsamıyla koru"><%= item.originalText || '' %></textarea>
+    </label>
+    <label class="field field-wide">
+      <span>Atomik gereksinim / değerlendirme kriteri</span>
+      <textarea name="requirement" rows="3" placeholder="Tek bir ölçülebilir alt koşul"><%= item.requirement || '' %></textarea>
+    </label>
+    <label class="field field-wide">
+      <span>Teklif edilen karşılık / bizim ürün / rakip karşılığı</span>
+      <textarea name="offeredItem" rows="3" placeholder="Model, konfigürasyon, hizmet veya karşılaştırılabilir rakip"><%= item.offeredItem || '' %></textarea>
+    </label>
+    <label class="field">
+      <span>SKU / feature code</span>
+      <input name="sku" value="<%= item.sku || '' %>" placeholder="Tam parça veya lisans kodu">
+    </label>
+    <label class="field">
+      <span>Adet kontrolü</span>
+      <input name="quantity" value="<%= item.quantity || '' %>" placeholder="Cihaz başı / toplam adet">
+    </label>
+  </div>
+</fieldset>
+
+<fieldset class="presales-fieldset evidence-fieldset">
+  <legend>Kanıt kapıları</legend>
+  <div class="evidence-grid">
+    <label class="field">
+      <span>Platform kabiliyeti</span>
+      <textarea name="capabilityEvidence" rows="3" placeholder="Ürün/model bunu teknik olarak destekliyor mu?"><%= item.capabilityEvidence || '' %></textarea>
+    </label>
+    <label class="field">
+      <span>BOM'a dahil olma</span>
+      <textarea name="inclusionEvidence" rows="3" placeholder="Gerekli SKU, lisans, aksesuar veya hizmet teklifte mi?"><%= item.inclusionEvidence || '' %></textarea>
+    </label>
+    <label class="field">
+      <span>Konfigürasyon uyumluluğu</span>
+      <textarea name="compatibilityEvidence" rows="3" placeholder="Seçili bileşenler birlikte çalışıyor mu?"><%= item.compatibilityEvidence || '' %></textarea>
+    </label>
+    <label class="field">
+      <span>Lisans / servis entitlement</span>
+      <textarea name="entitlementEvidence" rows="3" placeholder="Süre, seviye, güncelleme ve destek hakkı"><%= item.entitlementEvidence || '' %></textarea>
+    </label>
+    <label class="field field-wide">
+      <span>Kaynak referansı</span>
+      <input name="sourceRef" value="<%= item.sourceRef || '' %>" placeholder="Belge, sürüm, sayfa/bölüm, URL veya yerel dosya ve erişim tarihi">
+    </label>
+  </div>
+</fieldset>
+
+<fieldset class="presales-fieldset">
+  <legend>Cevap ve değişiklik metni</legend>
+  <div class="presales-form-grid">
+    <label class="field">
+      <span>Cevap modu</span>
+      <select name="responseMode">
+        <% responseModes.forEach((mode) => { %><option value="<%= mode.value %>" <%= isSelected('responseMode', mode.value, 'none') %>><%= mode.label %></option><% }) %>
+      </select>
+    </label>
+    <label class="field field-wide">
+      <span>Şartname cevabı</span>
+      <textarea name="responseText" rows="4" placeholder="Kanıtlandıktan sonra kısa kabul veya kaynak kapsamını koruyan pozitif wording"><%= item.responseText || '' %></textarea>
+    </label>
+    <label class="field field-wide">
+      <span>Önerilen değişiklik metni</span>
+      <textarea name="proposedText" rows="4" placeholder="En küçük gerekli revizyonu tam cümle olarak yaz"><%= item.proposedText || '' %></textarea>
+    </label>
+  </div>
+</fieldset>
+
+<fieldset class="presales-fieldset">
+  <legend>Risk, maliyet ve aksiyon</legend>
+  <div class="presales-form-grid risk-fields">
+    <label class="field">
+      <span>Olasılık</span>
+      <select name="riskProbability">
+        <option value="1" <%= isSelected('riskProbability', 1, 1) %>>1 · Düşük</option>
+        <option value="2" <%= isSelected('riskProbability', 2, 1) %>>2 · Orta</option>
+        <option value="3" <%= isSelected('riskProbability', 3, 1) %>>3 · Yüksek</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Etki</span>
+      <select name="riskImpact">
+        <option value="1" <%= isSelected('riskImpact', 1, 1) %>>1 · Düşük</option>
+        <option value="2" <%= isSelected('riskImpact', 2, 1) %>>2 · Orta</option>
+        <option value="3" <%= isSelected('riskImpact', 3, 1) %>>3 · Yüksek</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Kanıt açığı</span>
+      <select name="evidenceGap">
+        <option value="0" <%= isSelected('evidenceGap', 0, 0) %>>0 · Kanıtlı</option>
+        <option value="1" <%= isSelected('evidenceGap', 1, 0) %>>1 · Kısmi</option>
+        <option value="2" <%= isSelected('evidenceGap', 2, 0) %>>2 · Belirsiz</option>
+      </select>
+    </label>
+    <label class="field field-wide">
+      <span>Ek maliyet / teklif etkisi</span>
+      <textarea name="costImpact" rows="3" placeholder="Maliyet sürücüsü, fiyatlandırılacak kalem veya zaman etkisi"><%= item.costImpact || '' %></textarea>
+    </label>
+    <label class="field field-wide">
+      <span>Sorumluluk / yükümlülük</span>
+      <textarea name="responsibility" rows="3" placeholder="Aksesuar, lisans, hizmet, saha, altyapı, destek veya lojistik sorumluluğu"><%= item.responsibility || '' %></textarea>
+    </label>
+    <label class="field field-wide">
+      <span>Kapatma aksiyonu / sorulacak net soru</span>
+      <textarea name="action" rows="3" placeholder="BOM düzeltme, üretici teyidi, değişiklik talebi veya açık soru"><%= item.action || '' %></textarea>
+    </label>
+    <label class="field">
+      <span>Aksiyon sahibi</span>
+      <input name="owner" value="<%= item.owner || '' %>" placeholder="Satış, presales, üretici, distribütör">
+    </label>
+    <label class="field">
+      <span>Aksiyon termini</span>
+      <input name="dueAt" type="datetime-local" value="<%= toDateTimeInput(item.dueAt) %>">
+    </label>
+    <label class="field">
+      <span>Aksiyon hatırlatması</span>
+      <input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(item.reminderAt) %>">
+      <small>Terminden önce yerel bildirim gönderir</small>
+    </label>
+    <label class="field field-wide">
+      <span>Çalışma notu</span>
+      <textarea name="notes" rows="3" placeholder="Varsayım, görüşme notu ve bağlam"><%= item.notes || '' %></textarea>
+    </label>
+  </div>
+</fieldset>

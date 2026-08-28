@@ -1,8 +1,8 @@
 {
   "name": "gerit",
   "productName": "Gerit",
-  "version": "0.1.1",
-  "description": "A Turkish, keyboard-first, local-first task manager for focused work.",
+  "version": "0.2.0",
+  "description": "A Turkish, local-first task and presales workflow manager.",
   "main": "electron/main.js",
   "license": "MIT",
   "author": "Gerit contributors",
@@ -16,6 +16,8 @@
   },
   "keywords": [
     "task-manager",
+    "presales",
+    "solution-architecture",
     "todo",
     "local-first",
     "sqlite",

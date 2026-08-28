@@ -3,6 +3,15 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { config } from './config.js';
 import { nextOccurrence } from './recurrence.js';
+import {
+  clampInteger,
+  normalizeComplianceStatus,
+  normalizeConfidence,
+  normalizeOfferability,
+  normalizePresalesRecordType,
+  normalizePresalesStage,
+  normalizeResponseMode,
+} from './presales.js';
 import { normalizeProgress, normalizeTaskStatus } from './workflow.js';
 
 fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
@@ -42,6 +51,34 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_tasks_open_project
   ON tasks(project)
   WHERE completed_at IS NULL;
+
+  CREATE TABLE IF NOT EXISTS presales_cases (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    customer TEXT NOT NULL DEFAULT '',
+    tender_reference TEXT NOT NULL DEFAULT '',
+    stage TEXT NOT NULL DEFAULT 'intake',
+    offerability TEXT NOT NULL DEFAULT 'unassessed',
+    owner TEXT NOT NULL DEFAULT '',
+    manufacturer TEXT NOT NULL DEFAULT '',
+    product_family TEXT NOT NULL DEFAULT '',
+    proposed_model TEXT NOT NULL DEFAULT '',
+    competitors TEXT NOT NULL DEFAULT '',
+    deadline TEXT,
+    reminder_at TEXT,
+    reminder_sent_at TEXT,
+    next_action TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_presales_cases_deadline
+  ON presales_cases(deadline);
+
+  CREATE INDEX IF NOT EXISTS idx_presales_cases_reminder
+  ON presales_cases(reminder_at)
+  WHERE reminder_at IS NOT NULL AND reminder_sent_at IS NULL;
 `);
 
 ensureColumn('tasks', 'status', "TEXT NOT NULL DEFAULT 'planned'");
@@ -64,6 +101,52 @@ db.exec(`
   ON tasks(reminder_at)
   WHERE completed_at IS NULL AND reminder_sent_at IS NULL;
 
+  CREATE TABLE IF NOT EXISTS presales_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id INTEGER NOT NULL REFERENCES presales_cases(id) ON DELETE CASCADE,
+    record_type TEXT NOT NULL DEFAULT 'requirement',
+    reference_no TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL,
+    original_text TEXT NOT NULL DEFAULT '',
+    requirement TEXT NOT NULL DEFAULT '',
+    offered_item TEXT NOT NULL DEFAULT '',
+    sku TEXT NOT NULL DEFAULT '',
+    quantity TEXT NOT NULL DEFAULT '',
+    compliance_status TEXT NOT NULL DEFAULT 'unreviewed',
+    capability_evidence TEXT NOT NULL DEFAULT '',
+    inclusion_evidence TEXT NOT NULL DEFAULT '',
+    compatibility_evidence TEXT NOT NULL DEFAULT '',
+    entitlement_evidence TEXT NOT NULL DEFAULT '',
+    source_ref TEXT NOT NULL DEFAULT '',
+    response_mode TEXT NOT NULL DEFAULT 'none',
+    response_text TEXT NOT NULL DEFAULT '',
+    proposed_text TEXT NOT NULL DEFAULT '',
+    cost_impact TEXT NOT NULL DEFAULT '',
+    responsibility TEXT NOT NULL DEFAULT '',
+    action TEXT NOT NULL DEFAULT '',
+    owner TEXT NOT NULL DEFAULT '',
+    due_at TEXT,
+    reminder_at TEXT,
+    reminder_sent_at TEXT,
+    confidence TEXT NOT NULL DEFAULT 'medium',
+    risk_probability INTEGER NOT NULL DEFAULT 1,
+    risk_impact INTEGER NOT NULL DEFAULT 1,
+    evidence_gap INTEGER NOT NULL DEFAULT 0,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_presales_records_case
+  ON presales_records(case_id, record_type, reference_no);
+
+  CREATE INDEX IF NOT EXISTS idx_presales_records_status
+  ON presales_records(compliance_status);
+
+  CREATE INDEX IF NOT EXISTS idx_presales_records_reminder
+  ON presales_records(reminder_at)
+  WHERE reminder_at IS NOT NULL AND reminder_sent_at IS NULL;
+
   UPDATE tasks
   SET status = 'completed', progress = 100
   WHERE completed_at IS NOT NULL AND (status <> 'completed' OR progress <> 100);
@@ -82,6 +165,26 @@ const selectColumns = `
   recurrence, status, progress, reminder_at AS reminderAt,
   reminder_sent_at AS reminderSentAt, reminded_at AS remindedAt, completed_at AS completedAt,
   created_at AS createdAt, updated_at AS updatedAt
+`;
+
+const presalesCaseColumns = `
+  id, title, customer, tender_reference AS tenderReference, stage, offerability,
+  owner, manufacturer, product_family AS productFamily, proposed_model AS proposedModel,
+  competitors, deadline, reminder_at AS reminderAt, reminder_sent_at AS reminderSentAt,
+  next_action AS nextAction, notes, created_at AS createdAt, updated_at AS updatedAt
+`;
+
+const presalesRecordColumns = `
+  id, case_id AS caseId, record_type AS recordType, reference_no AS referenceNo,
+  title, original_text AS originalText, requirement, offered_item AS offeredItem,
+  sku, quantity, compliance_status AS complianceStatus,
+  capability_evidence AS capabilityEvidence, inclusion_evidence AS inclusionEvidence,
+  compatibility_evidence AS compatibilityEvidence, entitlement_evidence AS entitlementEvidence,
+  source_ref AS sourceRef, response_mode AS responseMode, response_text AS responseText,
+  proposed_text AS proposedText, cost_impact AS costImpact, responsibility, action, owner,
+  due_at AS dueAt, reminder_at AS reminderAt, reminder_sent_at AS reminderSentAt,
+  confidence, risk_probability AS riskProbability, risk_impact AS riskImpact,
+  evidence_gap AS evidenceGap, notes, created_at AS createdAt, updated_at AS updatedAt
 `;
 
 export const APPEARANCE_DEFAULTS = Object.freeze({
@@ -496,6 +599,334 @@ export function addTaskNote(taskId, content) {
     SELECT id, task_id AS taskId, content, created_at AS createdAt
     FROM task_notes WHERE id = ?
   `).get(Number(result.lastInsertRowid));
+}
+
+export function addPresalesCase(input) {
+  const timestamp = new Date().toISOString();
+  const payload = normalizePresalesCasePayload(input, timestamp);
+  const result = db.prepare(`
+    INSERT INTO presales_cases (
+      title, customer, tender_reference, stage, offerability, owner, manufacturer,
+      product_family, proposed_model, competitors, deadline, reminder_at,
+      next_action, notes, created_at, updated_at
+    ) VALUES (
+      @title, @customer, @tenderReference, @stage, @offerability, @owner, @manufacturer,
+      @productFamily, @proposedModel, @competitors, @deadline, @reminderAt,
+      @nextAction, @notes, @createdAt, @updatedAt
+    )
+  `).run(payload);
+  return getPresalesCase(Number(result.lastInsertRowid));
+}
+
+export function getPresalesCase(id) {
+  return db.prepare(`SELECT ${presalesCaseColumns} FROM presales_cases WHERE id = ?`).get(id);
+}
+
+export function updatePresalesCase(id, input) {
+  const existing = getPresalesCase(id);
+  if (!existing) return null;
+  const payload = normalizePresalesCasePayload(input, new Date().toISOString());
+  db.prepare(`
+    UPDATE presales_cases
+    SET title = @title,
+        customer = @customer,
+        tender_reference = @tenderReference,
+        stage = @stage,
+        offerability = @offerability,
+        owner = @owner,
+        manufacturer = @manufacturer,
+        product_family = @productFamily,
+        proposed_model = @proposedModel,
+        competitors = @competitors,
+        deadline = @deadline,
+        reminder_at = @reminderAt,
+        reminder_sent_at = CASE WHEN reminder_at IS @reminderAt THEN reminder_sent_at ELSE NULL END,
+        next_action = @nextAction,
+        notes = @notes,
+        updated_at = @updatedAt
+    WHERE id = @id
+  `).run({ id, ...payload });
+  return getPresalesCase(id);
+}
+
+export function deletePresalesCase(id) {
+  return db.prepare('DELETE FROM presales_cases WHERE id = ?').run(id).changes > 0;
+}
+
+export function getPresalesCases() {
+  return db.prepare(`
+    SELECT ${presalesCaseColumns},
+      (SELECT COUNT(*) FROM presales_records r WHERE r.case_id = presales_cases.id) AS recordCount,
+      (SELECT COUNT(*) FROM presales_records r
+        WHERE r.case_id = presales_cases.id
+          AND r.compliance_status IN ('noncompliant', 'clarification')) AS issueCount,
+      (SELECT COUNT(*) FROM presales_records r
+        WHERE r.case_id = presales_cases.id
+          AND (r.risk_probability * r.risk_impact + r.evidence_gap) >= 8) AS criticalCount
+    FROM presales_cases
+    ORDER BY CASE WHEN stage IN ('won', 'lost') THEN 1 ELSE 0 END,
+      CASE WHEN deadline IS NULL THEN 1 ELSE 0 END, deadline ASC, updated_at DESC
+  `).all();
+}
+
+export function getPresalesDashboardSummary(referenceIso, horizonIso) {
+  return {
+    active: db.prepare(`
+      SELECT COUNT(*) AS count FROM presales_cases WHERE stage NOT IN ('won', 'lost')
+    `).get().count,
+    dueSoon: db.prepare(`
+      SELECT COUNT(*) AS count FROM presales_cases
+      WHERE stage NOT IN ('won', 'lost') AND deadline IS NOT NULL AND deadline >= ? AND deadline < ?
+    `).get(referenceIso, horizonIso).count,
+    overdue: db.prepare(`
+      SELECT COUNT(*) AS count FROM presales_cases
+      WHERE stage NOT IN ('won', 'lost') AND deadline IS NOT NULL AND deadline < ?
+    `).get(referenceIso).count,
+    noncompliant: db.prepare(`
+      SELECT COUNT(*) AS count FROM presales_records r
+      JOIN presales_cases c ON c.id = r.case_id
+      WHERE c.stage NOT IN ('won', 'lost') AND r.compliance_status = 'noncompliant'
+    `).get().count,
+    clarification: db.prepare(`
+      SELECT COUNT(*) AS count FROM presales_records r
+      JOIN presales_cases c ON c.id = r.case_id
+      WHERE c.stage NOT IN ('won', 'lost') AND r.compliance_status = 'clarification'
+    `).get().count,
+    criticalRisks: db.prepare(`
+      SELECT COUNT(*) AS count FROM presales_records r
+      JOIN presales_cases c ON c.id = r.case_id
+      WHERE c.stage NOT IN ('won', 'lost')
+        AND (r.risk_probability * r.risk_impact + r.evidence_gap) >= 8
+    `).get().count,
+  };
+}
+
+export function getPresalesCaseMetrics(caseId) {
+  const statusRows = db.prepare(`
+    SELECT compliance_status AS status, COUNT(*) AS count
+    FROM presales_records WHERE case_id = ? GROUP BY compliance_status
+  `).all(caseId);
+  const typeRows = db.prepare(`
+    SELECT record_type AS type, COUNT(*) AS count
+    FROM presales_records WHERE case_id = ? GROUP BY record_type
+  `).all(caseId);
+  const counts = Object.fromEntries(statusRows.map((row) => [row.status, row.count]));
+  const types = Object.fromEntries(typeRows.map((row) => [row.type, row.count]));
+  const total = statusRows.reduce((sum, row) => sum + row.count, 0);
+  const assessed = total - (counts.unreviewed || 0) - (counts.out_of_scope || 0);
+  const compliant = (counts.compliant || 0) + (counts.completed || 0);
+  return {
+    total,
+    assessed,
+    compliant,
+    compliancePercent: assessed ? Math.round((compliant / assessed) * 100) : 0,
+    counts,
+    types,
+  };
+}
+
+export function addPresalesRecord(caseId, input) {
+  if (!getPresalesCase(caseId)) return null;
+  const timestamp = new Date().toISOString();
+  const payload = normalizePresalesRecordPayload(input, timestamp);
+  const result = db.prepare(`
+    INSERT INTO presales_records (
+      case_id, record_type, reference_no, title, original_text, requirement,
+      offered_item, sku, quantity, compliance_status, capability_evidence,
+      inclusion_evidence, compatibility_evidence, entitlement_evidence, source_ref,
+      response_mode, response_text, proposed_text, cost_impact, responsibility,
+      action, owner, due_at, reminder_at, confidence, risk_probability, risk_impact,
+      evidence_gap, notes, created_at, updated_at
+    ) VALUES (
+      @caseId, @recordType, @referenceNo, @title, @originalText, @requirement,
+      @offeredItem, @sku, @quantity, @complianceStatus, @capabilityEvidence,
+      @inclusionEvidence, @compatibilityEvidence, @entitlementEvidence, @sourceRef,
+      @responseMode, @responseText, @proposedText, @costImpact, @responsibility,
+      @action, @owner, @dueAt, @reminderAt, @confidence, @riskProbability, @riskImpact,
+      @evidenceGap, @notes, @createdAt, @updatedAt
+    )
+  `).run({ caseId, ...payload });
+  return getPresalesRecord(Number(result.lastInsertRowid));
+}
+
+export function getPresalesRecord(id) {
+  return db.prepare(`SELECT ${presalesRecordColumns} FROM presales_records WHERE id = ?`).get(id);
+}
+
+export function getPresalesRecords(caseId) {
+  return db.prepare(`
+    SELECT ${presalesRecordColumns}
+    FROM presales_records
+    WHERE case_id = ?
+    ORDER BY CASE record_type
+      WHEN 'requirement' THEN 0 WHEN 'bom' THEN 1 WHEN 'product' THEN 2
+      WHEN 'competition' THEN 3 WHEN 'change_request' THEN 4 WHEN 'response' THEN 5
+      WHEN 'cost_risk' THEN 6 ELSE 7 END,
+      CASE WHEN reference_no = '' THEN 1 ELSE 0 END, reference_no, updated_at DESC
+  `).all(caseId);
+}
+
+export function updatePresalesRecord(id, input) {
+  const existing = getPresalesRecord(id);
+  if (!existing) return null;
+  const payload = normalizePresalesRecordPayload(input, new Date().toISOString());
+  db.prepare(`
+    UPDATE presales_records
+    SET record_type = @recordType,
+        reference_no = @referenceNo,
+        title = @title,
+        original_text = @originalText,
+        requirement = @requirement,
+        offered_item = @offeredItem,
+        sku = @sku,
+        quantity = @quantity,
+        compliance_status = @complianceStatus,
+        capability_evidence = @capabilityEvidence,
+        inclusion_evidence = @inclusionEvidence,
+        compatibility_evidence = @compatibilityEvidence,
+        entitlement_evidence = @entitlementEvidence,
+        source_ref = @sourceRef,
+        response_mode = @responseMode,
+        response_text = @responseText,
+        proposed_text = @proposedText,
+        cost_impact = @costImpact,
+        responsibility = @responsibility,
+        action = @action,
+        owner = @owner,
+        due_at = @dueAt,
+        reminder_at = @reminderAt,
+        reminder_sent_at = CASE WHEN reminder_at IS @reminderAt THEN reminder_sent_at ELSE NULL END,
+        confidence = @confidence,
+        risk_probability = @riskProbability,
+        risk_impact = @riskImpact,
+        evidence_gap = @evidenceGap,
+        notes = @notes,
+        updated_at = @updatedAt
+    WHERE id = @id
+  `).run({ id, ...payload });
+  return getPresalesRecord(id);
+}
+
+export function deletePresalesRecord(id) {
+  return db.prepare('DELETE FROM presales_records WHERE id = ?').run(id).changes > 0;
+}
+
+export function searchPresales(query) {
+  const needle = `%${query}%`;
+  const ids = db.prepare(`
+    SELECT DISTINCT c.id
+    FROM presales_cases c
+    LEFT JOIN presales_records r ON r.case_id = c.id
+    WHERE c.title LIKE ? OR c.customer LIKE ? OR c.tender_reference LIKE ?
+      OR c.manufacturer LIKE ? OR c.product_family LIKE ? OR c.proposed_model LIKE ?
+      OR c.competitors LIKE ? OR c.notes LIKE ? OR r.title LIKE ? OR r.reference_no LIKE ?
+      OR r.requirement LIKE ? OR r.offered_item LIKE ? OR r.sku LIKE ? OR r.source_ref LIKE ?
+    ORDER BY c.updated_at DESC
+    LIMIT 50
+  `).all(...Array(14).fill(needle)).map((row) => row.id);
+  return ids.map((id) => getPresalesCase(id));
+}
+
+export function getPresalesExport(caseId) {
+  const presalesCase = getPresalesCase(caseId);
+  if (!presalesCase) return null;
+  return {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    case: presalesCase,
+    records: getPresalesRecords(caseId),
+  };
+}
+
+export function getDuePresalesReminders(nowIso) {
+  const caseRows = db.prepare(`
+    SELECT 'case' AS kind, id, title, customer, NULL AS caseTitle, tender_reference AS referenceNo,
+      reminder_at AS reminderAt, deadline AS dueAt, next_action AS action
+    FROM presales_cases
+    WHERE stage NOT IN ('won', 'lost') AND reminder_at IS NOT NULL
+      AND reminder_at <= ? AND reminder_sent_at IS NULL
+  `).all(nowIso);
+  const recordRows = db.prepare(`
+    SELECT 'record' AS kind, r.id, r.title, c.customer, c.title AS caseTitle,
+      r.reference_no AS referenceNo, r.reminder_at AS reminderAt,
+      r.due_at AS dueAt, r.action
+    FROM presales_records r
+    JOIN presales_cases c ON c.id = r.case_id
+    WHERE c.stage NOT IN ('won', 'lost') AND r.reminder_at IS NOT NULL
+      AND r.reminder_at <= ? AND r.reminder_sent_at IS NULL
+  `).all(nowIso);
+  return [...caseRows, ...recordRows]
+    .sort((left, right) => String(left.reminderAt).localeCompare(String(right.reminderAt)));
+}
+
+export function markPresalesReminded(kind, id, timestamp = new Date().toISOString()) {
+  const table = kind === 'case' ? 'presales_cases' : 'presales_records';
+  db.prepare(`UPDATE ${table} SET reminder_sent_at = ?, updated_at = ? WHERE id = ?`)
+    .run(timestamp, timestamp, id);
+}
+
+function normalizePresalesCasePayload(input, timestamp) {
+  const title = cleanText(input.title);
+  if (!title) throw new Error('Presales dosya başlığı gerekli.');
+  return {
+    title,
+    customer: cleanText(input.customer),
+    tenderReference: cleanText(input.tenderReference),
+    stage: normalizePresalesStage(input.stage),
+    offerability: normalizeOfferability(input.offerability),
+    owner: cleanText(input.owner),
+    manufacturer: cleanText(input.manufacturer),
+    productFamily: cleanText(input.productFamily),
+    proposedModel: cleanText(input.proposedModel),
+    competitors: cleanText(input.competitors),
+    deadline: input.deadline || null,
+    reminderAt: input.reminderAt || null,
+    nextAction: cleanText(input.nextAction),
+    notes: cleanText(input.notes),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+function normalizePresalesRecordPayload(input, timestamp) {
+  const title = cleanText(input.title);
+  if (!title) throw new Error('Presales kayıt başlığı gerekli.');
+  return {
+    recordType: normalizePresalesRecordType(input.recordType),
+    referenceNo: cleanText(input.referenceNo),
+    title,
+    originalText: cleanText(input.originalText),
+    requirement: cleanText(input.requirement),
+    offeredItem: cleanText(input.offeredItem),
+    sku: cleanText(input.sku),
+    quantity: cleanText(input.quantity),
+    complianceStatus: normalizeComplianceStatus(input.complianceStatus),
+    capabilityEvidence: cleanText(input.capabilityEvidence),
+    inclusionEvidence: cleanText(input.inclusionEvidence),
+    compatibilityEvidence: cleanText(input.compatibilityEvidence),
+    entitlementEvidence: cleanText(input.entitlementEvidence),
+    sourceRef: cleanText(input.sourceRef),
+    responseMode: normalizeResponseMode(input.responseMode),
+    responseText: cleanText(input.responseText),
+    proposedText: cleanText(input.proposedText),
+    costImpact: cleanText(input.costImpact),
+    responsibility: cleanText(input.responsibility),
+    action: cleanText(input.action),
+    owner: cleanText(input.owner),
+    dueAt: input.dueAt || null,
+    reminderAt: input.reminderAt || null,
+    confidence: normalizeConfidence(input.confidence),
+    riskProbability: clampInteger(input.riskProbability, 1, 3, 1),
+    riskImpact: clampInteger(input.riskImpact, 1, 3, 1),
+    evidenceGap: clampInteger(input.evidenceGap, 0, 2, 0),
+    notes: cleanText(input.notes),
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+}
+
+function cleanText(value) {
+  return String(value || '').trim();
 }
 
 function nextReminderAt(task, nextDue) {
