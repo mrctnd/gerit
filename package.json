@@ -14,6 +14,14 @@
     "type": "git",
     "url": "git+https://github.com/mrctnd/gerit.git"
   },
+  "keywords": [
+    "task-manager",
+    "todo",
+    "local-first",
+    "sqlite",
+    "turkish",
+    "self-hosted"
+  ],
   "files": [
     "bin",
     "public",
@@ -31,6 +39,16 @@
     "t": "./bin/t.js",
     "gerit": "./bin/t.js"
   },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "desktop": "electron .",
+    "desktop:pack": "electron-builder --dir --win --x64",
+    "desktop:dist": "electron-builder --win nsis --x64",
+    "test": "node --test --test-concurrency=1",
+    "check": "npm test && npm audit --omit=dev"
+  },
   "dependencies": {
     "chrono-node": "2.10.1",
     "dotenv": "17.4.2",
@@ -40,8 +58,51 @@
     "node-cron": "4.6.0",
     "rrule": "2.8.1"
   },
+  "devDependencies": {
+    "electron": "44.0.0",
+    "electron-builder": "26.15.3",
+    "supertest": "7.2.2"
+  },
   "engines": {
     "node": ">=22.13",
     "npm": ">=10"
+  },
+  "build": {
+    "appId": "com.gerit.desktop",
+    "productName": "Gerit",
+    "asar": true,
+    "directories": {
+      "output": "release/desktop"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "src/**/*",
+      "views/**/*",
+      "LICENSE",
+      "package.json",
+      "!data/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/brand/gerit-mark.png",
+      "artifactName": "Gerit-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gerit",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }
