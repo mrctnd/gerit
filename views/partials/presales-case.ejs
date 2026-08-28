@@ -12,7 +12,16 @@
     <dl>
       <div><dt>Müşteri</dt><dd><%= presalesCase.customer || 'Belirtilmedi' %></dd></div>
       <div><dt>Referans</dt><dd><%= presalesCase.tenderReference || 'Belirtilmedi' %></dd></div>
-      <div><dt>Teklif</dt><dd><%= [presalesCase.manufacturer, presalesCase.proposedModel].filter(Boolean).join(' · ') || 'Ürün seçilmedi' %></dd></div>
+      <div>
+        <dt>Teklif ürünleri</dt>
+        <dd class="presales-product-summary">
+          <% if (presalesCase.products.length) { %>
+            <% presalesCase.products.forEach((product) => { %><span><%= [product.manufacturer, product.productFamily, product.proposedModel].filter(Boolean).join(' · ') %></span><% }) %>
+          <% } else { %>
+            Ürün seçilmedi
+          <% } %>
+        </dd>
+      </div>
       <div><dt>Son tarih</dt><dd class="<%= presalesCase.deadlineMeta.overdue ? 'text-danger' : '' %>"><%= presalesCase.deadlineMeta.label || 'Tarih verilmedi' %></dd></div>
     </dl>
     <% if (presalesCase.nextAction) { %><p><strong>Sonraki aksiyon:</strong> <%= presalesCase.nextAction %></p><% } %>
@@ -44,9 +53,7 @@
           <span>Teklif kararı</span>
           <select name="offerability"><% offerabilityStatuses.forEach((status) => { %><option value="<%= status.value %>" <%= presalesCase.offerability === status.value ? 'selected' : '' %>><%= status.label %></option><% }) %></select>
         </label>
-        <label class="field"><span>Üretici / marka</span><input name="manufacturer" value="<%= presalesCase.manufacturer %>"></label>
-        <label class="field"><span>Ürün ailesi / kategori</span><input name="productFamily" value="<%= presalesCase.productFamily %>"></label>
-        <label class="field"><span>Teklif edilen model</span><input name="proposedModel" value="<%= presalesCase.proposedModel %>"></label>
+        <%- include('presales-product-list', { products: presalesCase.products }) %>
         <label class="field"><span>Sorumlu</span><input name="owner" value="<%= presalesCase.owner %>"></label>
         <label class="field"><span>Son teslim tarihi</span><input name="deadline" type="datetime-local" value="<%= toDateTimeInput(presalesCase.deadline) %>"></label>
         <label class="field"><span>Dosya hatırlatması</span><input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(presalesCase.reminderAt) %>"><small>Son teslim tarihinden önce olmalı</small></label>

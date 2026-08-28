@@ -37,10 +37,36 @@ before(async () => {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE presales_cases (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      customer TEXT NOT NULL DEFAULT '',
+      tender_reference TEXT NOT NULL DEFAULT '',
+      stage TEXT NOT NULL DEFAULT 'intake',
+      offerability TEXT NOT NULL DEFAULT 'unassessed',
+      owner TEXT NOT NULL DEFAULT '',
+      manufacturer TEXT NOT NULL DEFAULT '',
+      product_family TEXT NOT NULL DEFAULT '',
+      proposed_model TEXT NOT NULL DEFAULT '',
+      competitors TEXT NOT NULL DEFAULT '',
+      deadline TEXT,
+      reminder_at TEXT,
+      reminder_sent_at TEXT,
+      next_action TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     INSERT INTO tasks (
       title, notes, completed_at, created_at, updated_at
     ) VALUES (
       'Eski tamamlanmış iş', '', '2026-08-22T09:00:00.000Z',
+      '2026-08-20T09:00:00.000Z', '2026-08-22T09:00:00.000Z'
+    );
+    INSERT INTO presales_cases (
+      title, customer, manufacturer, product_family, proposed_model, created_at, updated_at
+    ) VALUES (
+      'Eski presales dosyası', 'Geçiş Kurumu', 'Lenovo', 'Rack sunucu', 'SR650 V4',
       '2026-08-20T09:00:00.000Z', '2026-08-22T09:00:00.000Z'
     );
   `);
@@ -57,12 +83,19 @@ before(async () => {
 
 test('eski veritabanı yeni iş akışı alanlarına veri kaybetmeden taşınır', () => {
   const migrated = dbModule.getTask(1);
+  const migratedPresales = dbModule.getPresalesCase(1);
 
   assert.equal(migrated.title, 'Eski tamamlanmış iş');
   assert.equal(migrated.status, 'completed');
   assert.equal(migrated.progress, 100);
   assert.equal(migrated.reminderAt, null);
   assert.deepEqual(dbModule.getTaskNotes(migrated.id), []);
+  assert.equal(migratedPresales.title, 'Eski presales dosyası');
+  assert.deepEqual(migratedPresales.products.map((product) => ({
+    manufacturer: product.manufacturer,
+    productFamily: product.productFamily,
+    proposedModel: product.proposedModel,
+  })), [{ manufacturer: 'Lenovo', productFamily: 'Rack sunucu', proposedModel: 'SR650 V4' }]);
 });
 
 after(() => {
@@ -258,11 +291,11 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
       title: 'Kurum veri merkezi yenileme',
       customer: 'Örnek Kurum',
       tenderReference: '2026/SA-17',
-      stage: 'spec_review',
+      stage: 'estimated_cost',
       offerability: 'conditional',
-      manufacturer: 'Lenovo',
-      productFamily: 'Rack sunucu',
-      proposedModel: 'ThinkSystem SR650 V4',
+      manufacturer: ['Lenovo', 'Cisco'],
+      productFamily: ['Rack sunucu', 'Veri merkezi ağı'],
+      proposedModel: ['ThinkSystem SR650 V4', 'Nexus 9364C'],
       competitors: 'Dell PowerEdge R770, HPE ProLiant DL380 Gen12',
       deadline: '2026-09-15T17:00',
       nextAction: 'Üreticiden bellek popülasyon teyidi al',
@@ -306,7 +339,10 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
   const presalesCase = dbModule.getPresalesCase(caseId);
   const records = dbModule.getPresalesRecords(caseId);
   assert.equal(presalesCase.customer, 'Örnek Kurum');
-  assert.equal(presalesCase.stage, 'spec_review');
+  assert.equal(presalesCase.stage, 'estimated_cost');
+  assert.equal(presalesCase.products.length, 2);
+  assert.deepEqual(presalesCase.products.map((product) => product.manufacturer), ['Lenovo', 'Cisco']);
+  assert.equal(presalesCase.products[1].proposedModel, 'Nexus 9364C');
   assert.equal(records.length, 1);
   assert.equal(records[0].complianceStatus, 'conditional');
   assert.match(records[0].inclusionEvidence, /yalnız bir PSU/);
@@ -315,15 +351,39 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
   const page = await request(app).get(`/presales/${caseId}`).expect(200);
   assert.match(page.text, /Kurum veri merkezi yenileme/);
   assert.match(page.text, /Şartlı Uygun/);
+  assert.match(page.text, /Yaklaşık maliyet çalışması/);
+  assert.match(page.text, /Nexus 9364C/);
+  assert.match(page.text, /data-add-product/);
   assert.match(page.text, /4\/4 kanıt kapısı/);
   assert.match(page.text, /Kritik · 11/);
 
   const search = await request(app).get('/search?q=PSU-SKU-01').expect(200);
   assert.match(search.text, /Kurum veri merkezi yenileme/);
+  const productSearch = await request(app).get('/search?q=Nexus%209364C').expect(200);
+  assert.match(productSearch.text, /Kurum veri merkezi yenileme/);
 
   const exported = await request(app).get(`/presales/${caseId}/export`).expect(200);
   assert.equal(exported.body.case.id, caseId);
+  assert.equal(exported.body.schemaVersion, 2);
+  assert.equal(exported.body.case.products.length, 2);
   assert.equal(exported.body.records[0].sku, 'PSU-SKU-01');
+
+  await request(app)
+    .post(`/presales/${caseId}`)
+    .type('form')
+    .send({
+      title: 'Kurum veri merkezi yenileme',
+      customer: 'Örnek Kurum',
+      stage: 'estimated_cost',
+      manufacturer: 'HPE',
+      productFamily: 'Rack sunucu',
+      proposedModel: 'ProLiant DL380 Gen12',
+    })
+    .expect(302)
+    .expect('Location', `/presales/${caseId}`);
+  const updatedProducts = dbModule.getPresalesCase(caseId).products;
+  assert.equal(updatedProducts.length, 1);
+  assert.equal(updatedProducts[0].manufacturer, 'HPE');
 });
 
 test('presales hatırlatması terminden sonra planlanamaz', async () => {
@@ -533,6 +593,8 @@ test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async
   assert.match(response.text, /data-theme-option="forest"/);
   assert.match(response.text, /data-font-option="editorial"/);
   assert.match(response.text, /data-motion-option="reduced"/);
+  assert.match(response.text, /data-motion-preview-marker/);
+  assert.match(response.text, /data-scale-input/);
   assert.match(response.text, /src="\/preferences\.js\?v=[^"]+"/);
   assert.match(response.text, /action="\/notifications\/test"/);
 });
@@ -540,22 +602,30 @@ test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async
 test('appearance preferences persist in SQLite and render on the next page load', async () => {
   const saveResponse = await request(app)
     .post('/api/preferences/appearance')
-    .send({ theme: 'forest', font: 'mono', motion: 'reduced' })
+    .send({ theme: 'forest', font: 'mono', motion: 'reduced', scale: 135 })
     .expect(200);
 
   assert.deepEqual(saveResponse.body.appearance, {
     theme: 'forest',
     font: 'mono',
     motion: 'reduced',
+    scale: 135,
   });
   assert.deepEqual(dbModule.getAppearancePreferences(), saveResponse.body.appearance);
 
   const response = await request(app).get('/today').expect(200);
-  assert.match(response.text, /<html lang="tr" data-theme="forest" data-font="mono" data-motion="reduced">/);
+  assert.match(response.text, /<html lang="tr" data-theme="forest" data-font="mono" data-motion="reduced" data-scale="135">/);
   assert.match(response.text, /data-theme-option="forest" aria-pressed="true"/);
   assert.match(response.text, /data-font-option="mono" aria-pressed="true"/);
   assert.match(response.text, /data-motion-option="reduced" aria-pressed="true"/);
+  assert.match(response.text, /data-scale-input type="range" min="80" max="160" step="5" value="135"/);
   assert.match(response.text, /yerel veritaban/);
+
+  const clamped = await request(app)
+    .post('/api/preferences/appearance')
+    .send({ theme: 'forest', font: 'mono', motion: 'full', scale: 999 })
+    .expect(200);
+  assert.equal(clamped.body.appearance.scale, 160);
 });
 
 test('Gerit logosu uygulamanın kendi statik dosyası olarak sunulur', async () => {
@@ -565,10 +635,14 @@ test('Gerit logosu uygulamanın kendi statik dosyası olarak sunulur', async () 
   assert.ok(response.body.length > 100_000);
 });
 
-test('görünüm değişimleri gecikmeli sayfa giriş animasyonu çalıştırmaz', () => {
+test('görünüm ölçeği ve hareket profilleri yerel istemcide uygulanır', () => {
   const clientScript = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 
-  assert.doesNotMatch(clientScript, /runEntranceSequence|page-transition|window\.location\.assign/);
+  assert.match(clientScript, /function applyScale/);
+  assert.match(clientScript, /function motionProfile/);
+  assert.match(clientScript, /function revealWorkspace/);
+  assert.match(clientScript, /data-product-editor/);
+  assert.doesNotMatch(clientScript, /page-transition|window\.location\.assign/);
   assert.doesNotMatch(clientScript, /localStorage/);
 });
 

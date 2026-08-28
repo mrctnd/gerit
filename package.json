@@ -1,7 +1,7 @@
 {
   "name": "gerit",
   "productName": "Gerit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A Turkish, local-first task and presales workflow manager.",
   "main": "electron/main.js",
   "license": "MIT",

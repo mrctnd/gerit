@@ -26,6 +26,9 @@
   --font-code: ui-monospace, SFMono-Regular, Consolas, monospace;
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ui-scale: 1;
+  --motion-duration: 180ms;
+  --motion-lift: -1px;
 }
 
 * {
@@ -49,6 +52,17 @@ body {
   background-size: 28px 28px, 28px 28px, auto, auto;
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
+  zoom: var(--ui-scale);
+}
+
+html[data-motion="full"] {
+  --motion-duration: 280ms;
+  --motion-lift: -2px;
+}
+
+html[data-motion="reduced"] {
+  --motion-duration: 1ms;
+  --motion-lift: 0;
 }
 
 button,
@@ -2341,6 +2355,88 @@ button:active,
   color: var(--ink);
 }
 
+.motion-preview {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--paper) 68%, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.motion-preview > span {
+  position: relative;
+  display: block;
+  width: 150px;
+  max-width: 100%;
+  height: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--line) 68%, var(--panel));
+  border-radius: 4px;
+}
+
+.motion-preview i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 32px;
+  background: var(--accent-dark);
+  border-radius: 3px;
+}
+
+.motion-preview small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.scale-section output {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.scale-control {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 10px;
+}
+
+.scale-control input[type="range"] {
+  width: 100%;
+  height: 30px;
+  accent-color: var(--accent-dark);
+}
+
+.scale-step,
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 72%, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 20px;
+  line-height: 1;
+  transition:
+    transform var(--motion-duration) var(--ease-spring),
+    border-color var(--motion-duration) ease,
+    background-color var(--motion-duration) ease;
+}
+
+.scale-step:hover,
+.icon-button:hover {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  transform: translateY(var(--motion-lift));
+}
+
 .appearance-footer {
   display: flex;
   align-items: center;
@@ -2937,6 +3033,143 @@ html[data-motion="reduced"] *::after {
   margin-top: 28px;
 }
 
+.presales-product-editor {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  background: color-mix(in srgb, var(--paper) 62%, var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.product-editor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.product-editor-heading span,
+.product-editor-heading small {
+  display: block;
+}
+
+.product-editor-heading span {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.product-editor-heading small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.product-add-button {
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.product-entry-list {
+  display: grid;
+  gap: 8px;
+}
+
+.product-entry {
+  display: grid;
+  grid-template-columns: 28px repeat(3, minmax(0, 1fr)) 36px;
+  align-items: end;
+  gap: 9px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  transition:
+    transform var(--motion-duration) var(--ease-out),
+    border-color var(--motion-duration) ease,
+    box-shadow var(--motion-duration) ease;
+}
+
+.product-entry:focus-within {
+  border-color: color-mix(in srgb, var(--accent-dark) 55%, var(--line));
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--sidebar) 7%, transparent);
+}
+
+.product-entry-index {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 9px;
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+  border-radius: 6px;
+  font-family: var(--font-code);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.product-entry .field {
+  min-width: 0;
+}
+
+.product-entry .field input {
+  height: 40px;
+  font-size: 11px;
+}
+
+.product-remove-button {
+  width: 36px;
+  height: 40px;
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.presales-product-summary {
+  display: grid;
+  gap: 3px;
+}
+
+.presales-product-summary span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.task-row,
+.presales-case-row,
+.presales-record > summary,
+.workstream-strip a,
+.primary-button,
+.secondary-button,
+.nav-item {
+  transition-duration: var(--motion-duration);
+}
+
+html:not([data-motion="reduced"]) .presales-case-row:hover,
+html:not([data-motion="reduced"]) .presales-record > summary:hover,
+html:not([data-motion="reduced"]) .workstream-strip a:hover {
+  transform: translateY(var(--motion-lift));
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--sidebar) 8%, transparent);
+}
+
+html[data-motion="full"] .primary-button:hover,
+html[data-motion="full"] .secondary-button:hover,
+html[data-motion="full"] .nav-item:hover {
+  transform: translateY(-2px);
+}
+
+html:not([data-motion="reduced"]) .presales-record[open] .presales-record-body {
+  animation: presales-surface-enter var(--motion-duration) var(--ease-out) both;
+}
+
+@keyframes presales-surface-enter {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 1000px) {
   .presales-summary,
   .presales-metrics {
@@ -2945,6 +3178,26 @@ html[data-motion="reduced"] *::after {
 
   .workstream-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .product-entry {
+    grid-template-columns: 28px minmax(0, 1fr) 36px;
+    align-items: center;
+  }
+
+  .product-entry .field {
+    grid-column: 2;
+  }
+
+  .product-entry-index {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .product-remove-button {
+    grid-column: 3;
+    grid-row: 1;
   }
 }
 

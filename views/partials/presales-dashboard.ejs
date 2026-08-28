@@ -44,8 +44,10 @@
               <strong><%= presalesCase.title %></strong>
               <small><%= [presalesCase.customer, presalesCase.tenderReference].filter(Boolean).join(' · ') || 'Müşteri ve referans bekleniyor' %></small>
               <span class="presales-inline-meta">
-                <% if (presalesCase.manufacturer) { %><span><%= presalesCase.manufacturer %></span><% } %>
-                <% if (presalesCase.proposedModel) { %><span><%= presalesCase.proposedModel %></span><% } %>
+                <% presalesCase.products.slice(0, 3).forEach((product) => { %>
+                  <span><%= [product.manufacturer, product.proposedModel].filter(Boolean).join(' · ') || product.productFamily %></span>
+                <% }) %>
+                <% if (presalesCase.products.length > 3) { %><span>+<%= presalesCase.products.length - 3 %> ürün</span><% } %>
                 <% if (presalesCase.deadlineMeta.label) { %><span class="<%= presalesCase.deadlineMeta.overdue ? 'text-danger' : '' %>"><%= presalesCase.deadlineMeta.label %></span><% } %>
               </span>
             </span>
@@ -98,18 +100,7 @@
             <% offerabilityStatuses.forEach((status) => { %><option value="<%= status.value %>"><%= status.label %></option><% }) %>
           </select>
         </label>
-        <label class="field">
-          <span>Üretici / marka</span>
-          <input name="manufacturer" placeholder="Lenovo, Dell, HPE, Cisco...">
-        </label>
-        <label class="field">
-          <span>Ürün ailesi / kategori</span>
-          <input name="productFamily" placeholder="Rack sunucu, depolama, ağ...">
-        </label>
-        <label class="field">
-          <span>Teklif edilen model</span>
-          <input name="proposedModel" placeholder="Tam model / MTM">
-        </label>
+        <%- include('presales-product-list', { products: [] }) %>
         <label class="field">
           <span>Sorumlu</span>
           <input name="owner" placeholder="Presales / satış sorumlusu">

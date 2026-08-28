@@ -574,15 +574,30 @@ function presalesCasePayload(body) {
     stage: body.stage,
     offerability: body.offerability,
     owner: body.owner,
-    manufacturer: body.manufacturer,
-    productFamily: body.productFamily,
-    proposedModel: body.proposedModel,
+    products: presalesProductsPayload(body),
     competitors: body.competitors,
     deadline: toUtcIso(body.deadline),
     reminderAt: toUtcIso(body.reminderAt),
     nextAction: body.nextAction,
     notes: body.notes,
   };
+}
+
+function presalesProductsPayload(body) {
+  const manufacturers = formValues(body.manufacturer);
+  const productFamilies = formValues(body.productFamily);
+  const proposedModels = formValues(body.proposedModel);
+  const rowCount = Math.max(manufacturers.length, productFamilies.length, proposedModels.length, 1);
+  return Array.from({ length: rowCount }, (_, index) => ({
+    manufacturer: manufacturers[index] || '',
+    productFamily: productFamilies[index] || '',
+    proposedModel: proposedModels[index] || '',
+  }));
+}
+
+function formValues(value) {
+  if (Array.isArray(value)) return value;
+  return value === undefined ? [] : [value];
 }
 
 function presalesRecordPayload(body) {

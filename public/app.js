@@ -1,5 +1,5 @@
 (() => {
-  const defaults = { theme: 'atlas', font: 'modern', motion: 'system' };
+  const defaults = { theme: 'atlas', font: 'modern', motion: 'system', scale: 100 };
   const labels = {
     theme: { atlas: 'Atlas', forest: 'Orman', violet: 'Lavanta', ember: 'Kehribar' },
     font: { modern: 'Modern', humanist: 'Humanist', editorial: 'Editoryal', mono: 'Teknik' },
@@ -20,6 +20,10 @@
   const appearanceTrigger = document.querySelector('#appearance-trigger');
   const appearancePanel = appearanceDialog?.querySelector('.appearance-panel');
   const appearanceStatus = document.querySelector('#appearance-status');
+  const scaleInput = document.querySelector('[data-scale-input]');
+  const scaleOutput = document.querySelector('[data-scale-output]');
+  const motionPreviewMarker = document.querySelector('[data-motion-preview-marker]');
+  const motionPreviewLabel = document.querySelector('[data-motion-preview-label]');
   const progressInput = document.querySelector('input[name="progress"]');
   const progressOutput = document.querySelector('[data-progress-output]');
   let selectedIndex = rows.length ? 0 : -1;
@@ -31,7 +35,14 @@
       theme: root.dataset.theme || defaults.theme,
       font: root.dataset.font || defaults.font,
       motion: root.dataset.motion || defaults.motion,
+      scale: normalizeScale(root.dataset.scale),
     };
+  }
+
+  function normalizeScale(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return defaults.scale;
+    return Math.min(160, Math.max(80, Math.round(parsed / 5) * 5));
   }
 
   function flushPreferencesWithBeacon() {
@@ -72,16 +83,26 @@
     return preference === 'reduced' || (preference === 'system' && systemMotion.matches);
   }
 
+  function motionProfile() {
+    const preference = root.dataset.motion || defaults.motion;
+    if (preference === 'full') return { duration: 360, distance: 10, stagger: 28 };
+    if (prefersReducedMotion()) return { duration: 1, distance: 0, stagger: 0 };
+    return { duration: 210, distance: 4, stagger: 0 };
+  }
+
   function play(target, keyframes, options = {}) {
     if (!target || prefersReducedMotion() || typeof target.animate !== 'function') {
       return Promise.resolve();
     }
 
     try {
+      const profile = motionProfile();
+      const { duration: optionDuration, ...animationOptions } = options;
+      const requestedDuration = optionDuration || profile.duration;
       const animation = target.animate(keyframes, {
-        duration: 320,
+        duration: root.dataset.motion === 'full' ? requestedDuration : Math.min(requestedDuration, profile.duration),
         easing: 'cubic-bezier(.22, 1, .36, 1)',
-        ...options,
+        ...animationOptions,
       });
       return animation.finished.catch(() => undefined);
     } catch {
@@ -106,6 +127,8 @@
     document.querySelectorAll('[data-motion-option]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.motionOption === preferences.motion));
     });
+    if (scaleInput) scaleInput.value = String(preferences.scale);
+    if (scaleOutput) scaleOutput.textContent = `%${preferences.scale}`;
   }
 
   function syncProgress() {
@@ -131,8 +154,101 @@
       ], { duration: 460 });
     }
 
+    if (key === 'motion') previewMotion(value);
+
     if (shouldAnnounce) announce(labels[key][value] + ' seçildi.');
     window.setTimeout(() => root.classList.remove('theme-changing'), 460);
+  }
+
+  function applyScale(value, { save = true, shouldAnnounce = true } = {}) {
+    const scale = normalizeScale(value);
+    root.dataset.scale = String(scale);
+    root.style.setProperty('--ui-scale', String(scale / 100));
+    syncAppearanceControls();
+    if (save) writePreferences(readPreferences());
+    if (shouldAnnounce) announce(`Arayüz ölçeği %${scale}.`);
+  }
+
+  function previewMotion(mode = root.dataset.motion) {
+    if (!motionPreviewMarker) return;
+    const labelsByMode = { system: 'Sistemi izle', full: 'Akıcı', reduced: 'Sakin' };
+    if (motionPreviewLabel) motionPreviewLabel.textContent = labelsByMode[mode] || labelsByMode.system;
+    motionPreviewMarker.getAnimations?.().forEach((animation) => animation.cancel());
+    if (mode === 'reduced' || (mode === 'system' && systemMotion.matches)
+      || typeof motionPreviewMarker.animate !== 'function') {
+      motionPreviewMarker.style.transform = 'translateX(0)';
+      return;
+    }
+    const distance = mode === 'full' ? 104 : 62;
+    const duration = mode === 'full' ? 720 : 420;
+    motionPreviewMarker.animate([
+      { transform: 'translateX(0)' },
+      { transform: `translateX(${distance}px)`, offset: 0.48 },
+      { transform: mode === 'full' ? `translateX(${distance - 12}px)` : `translateX(${distance}px)`, offset: 0.64 },
+      { transform: 'translateX(0)' },
+    ], { duration, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+  }
+
+  function revealWorkspace() {
+    if (prefersReducedMotion()) return;
+    const profile = motionProfile();
+    const selectors = root.dataset.motion === 'full'
+      ? ['.page-heading', '.work-summary, .presales-summary, .presales-case-hero', '.quick-add-card, .presales-metrics', '.task-surface']
+      : ['.page-heading', '.task-surface'];
+    selectors.forEach((selector, index) => {
+      const target = document.querySelector(selector);
+      if (!target) return;
+      play(target, [
+        { opacity: 0, transform: `translateY(${profile.distance}px)` },
+        { opacity: 1, transform: 'translateY(0)' },
+      ], { duration: profile.duration, delay: index * profile.stagger, fill: 'both' });
+    });
+  }
+
+  function setupProductEditor(editor) {
+    const rowsContainer = editor.querySelector('[data-product-rows]');
+    const template = editor.querySelector('[data-product-template]');
+    const addButton = editor.querySelector('[data-add-product]');
+    if (!rowsContainer || !template || !addButton) return;
+
+    const syncRows = () => {
+      const productRows = [...rowsContainer.querySelectorAll('[data-product-row]')];
+      productRows.forEach((row, index) => {
+        const indexLabel = row.querySelector('[data-product-index]');
+        if (indexLabel) indexLabel.textContent = String(index + 1);
+      });
+      addButton.disabled = productRows.length >= 30;
+    };
+
+    addButton.addEventListener('click', () => {
+      if (rowsContainer.querySelectorAll('[data-product-row]').length >= 30) return;
+      const row = template.content.firstElementChild?.cloneNode(true);
+      if (!(row instanceof HTMLElement)) return;
+      rowsContainer.append(row);
+      syncRows();
+      play(row, [
+        { opacity: 0, transform: 'translateY(-6px)' },
+        { opacity: 1, transform: 'translateY(0)' },
+      ], { duration: 260 });
+      row.querySelector('input')?.focus();
+    });
+
+    rowsContainer.addEventListener('click', (event) => {
+      if (!(event.target instanceof Element)) return;
+      const removeButton = event.target.closest('[data-remove-product]');
+      if (!removeButton) return;
+      const row = removeButton.closest('[data-product-row]');
+      if (!row) return;
+      const productRows = rowsContainer.querySelectorAll('[data-product-row]');
+      if (productRows.length === 1) {
+        row.querySelectorAll('input').forEach((input) => { input.value = ''; });
+      } else {
+        row.remove();
+      }
+      syncRows();
+    });
+
+    syncRows();
   }
 
   function isTyping(target) {
@@ -208,13 +324,43 @@
   document.querySelectorAll('[data-motion-option]').forEach((button) => {
     button.addEventListener('click', () => applyPreference('motion', button.dataset.motionOption));
   });
+  scaleInput?.addEventListener('input', () => {
+    applyScale(scaleInput.value, { save: false, shouldAnnounce: false });
+  });
+  scaleInput?.addEventListener('change', () => applyScale(scaleInput.value));
+  document.querySelectorAll('[data-scale-step]').forEach((button) => {
+    button.addEventListener('click', () => {
+      applyScale(readPreferences().scale + Number(button.dataset.scaleStep));
+    });
+  });
   document.querySelector('[data-reset-appearance]')?.addEventListener('click', () => {
-    Object.entries(defaults).forEach(([key, value]) => applyPreference(key, value, false));
+    ['theme', 'font', 'motion'].forEach((key) => applyPreference(key, defaults[key], false));
+    applyScale(defaults.scale, { shouldAnnounce: false });
     announce('Görünüm varsayılan ayarlara döndü.');
   });
 
+  document.querySelectorAll('[data-product-editor]').forEach(setupProductEditor);
+
   document.addEventListener('keydown', (event) => {
     const typing = isTyping(event.target);
+
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      if (['+', '=', 'Add'].includes(event.key)) {
+        event.preventDefault();
+        applyScale(readPreferences().scale + 5);
+        return;
+      }
+      if (['-', '_', 'Subtract'].includes(event.key)) {
+        event.preventDefault();
+        applyScale(readPreferences().scale - 5);
+        return;
+      }
+      if (event.key === '0') {
+        event.preventDefault();
+        applyScale(defaults.scale);
+        return;
+      }
+    }
 
     if (!typing && event.key.toLowerCase() === 'g') {
       event.preventDefault();
@@ -297,4 +443,6 @@
   window.addEventListener('pagehide', flushPreferencesWithBeacon);
   syncProgress();
   syncAppearanceControls();
+  previewMotion();
+  window.requestAnimationFrame(revealWorkspace);
 })();

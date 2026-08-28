@@ -147,6 +147,30 @@ db.exec(`
   ON presales_records(reminder_at)
   WHERE reminder_at IS NOT NULL AND reminder_sent_at IS NULL;
 
+  CREATE TABLE IF NOT EXISTS presales_case_products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id INTEGER NOT NULL REFERENCES presales_cases(id) ON DELETE CASCADE,
+    manufacturer TEXT NOT NULL DEFAULT '',
+    product_family TEXT NOT NULL DEFAULT '',
+    proposed_model TEXT NOT NULL DEFAULT '',
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_presales_case_products_case
+  ON presales_case_products(case_id, position, id);
+
+  INSERT INTO presales_case_products (
+    case_id, manufacturer, product_family, proposed_model, position, created_at
+  )
+  SELECT id, manufacturer, product_family, proposed_model, 0, created_at
+  FROM presales_cases AS legacy_case
+  WHERE (manufacturer <> '' OR product_family <> '' OR proposed_model <> '')
+    AND NOT EXISTS (
+      SELECT 1 FROM presales_case_products product
+      WHERE product.case_id = legacy_case.id
+    );
+
   UPDATE tasks
   SET status = 'completed', progress = 100
   WHERE completed_at IS NOT NULL AND (status <> 'completed' OR progress <> 100);
@@ -191,6 +215,7 @@ export const APPEARANCE_DEFAULTS = Object.freeze({
   theme: 'atlas',
   font: 'modern',
   motion: 'system',
+  scale: 100,
 });
 
 const APPEARANCE_ALLOWED = {
@@ -199,14 +224,20 @@ const APPEARANCE_ALLOWED = {
   motion: new Set(['system', 'full', 'reduced']),
 };
 
+function normalizeAppearanceScale(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return APPEARANCE_DEFAULTS.scale;
+  return Math.min(160, Math.max(80, Math.round(parsed / 5) * 5));
+}
+
 function normalizeAppearancePreferences(preferences = {}) {
   const source = preferences && typeof preferences === 'object' ? preferences : {};
-  return Object.fromEntries(
-    Object.entries(APPEARANCE_DEFAULTS).map(([key, defaultValue]) => [
-      key,
-      APPEARANCE_ALLOWED[key].has(source[key]) ? source[key] : defaultValue,
-    ]),
-  );
+  return {
+    theme: APPEARANCE_ALLOWED.theme.has(source.theme) ? source.theme : APPEARANCE_DEFAULTS.theme,
+    font: APPEARANCE_ALLOWED.font.has(source.font) ? source.font : APPEARANCE_DEFAULTS.font,
+    motion: APPEARANCE_ALLOWED.motion.has(source.motion) ? source.motion : APPEARANCE_DEFAULTS.motion,
+    scale: normalizeAppearanceScale(source.scale),
+  };
 }
 
 export function getAppearancePreferences() {
@@ -601,9 +632,10 @@ export function addTaskNote(taskId, content) {
   `).get(Number(result.lastInsertRowid));
 }
 
-export function addPresalesCase(input) {
+export const addPresalesCase = transaction((input) => {
   const timestamp = new Date().toISOString();
   const payload = normalizePresalesCasePayload(input, timestamp);
+  const { products, ...casePayload } = payload;
   const result = db.prepare(`
     INSERT INTO presales_cases (
       title, customer, tender_reference, stage, offerability, owner, manufacturer,
@@ -614,18 +646,22 @@ export function addPresalesCase(input) {
       @productFamily, @proposedModel, @competitors, @deadline, @reminderAt,
       @nextAction, @notes, @createdAt, @updatedAt
     )
-  `).run(payload);
-  return getPresalesCase(Number(result.lastInsertRowid));
-}
+  `).run(casePayload);
+  const caseId = Number(result.lastInsertRowid);
+  replacePresalesCaseProducts(caseId, products, timestamp);
+  return getPresalesCase(caseId);
+});
 
 export function getPresalesCase(id) {
-  return db.prepare(`SELECT ${presalesCaseColumns} FROM presales_cases WHERE id = ?`).get(id);
+  const presalesCase = db.prepare(`SELECT ${presalesCaseColumns} FROM presales_cases WHERE id = ?`).get(id);
+  return presalesCase ? attachPresalesProducts(presalesCase) : undefined;
 }
 
-export function updatePresalesCase(id, input) {
+export const updatePresalesCase = transaction((id, input) => {
   const existing = getPresalesCase(id);
   if (!existing) return null;
   const payload = normalizePresalesCasePayload(input, new Date().toISOString());
+  const { products, createdAt: _createdAt, ...casePayload } = payload;
   db.prepare(`
     UPDATE presales_cases
     SET title = @title,
@@ -645,9 +681,10 @@ export function updatePresalesCase(id, input) {
         notes = @notes,
         updated_at = @updatedAt
     WHERE id = @id
-  `).run({ id, ...payload });
+  `).run({ id, ...casePayload });
+  replacePresalesCaseProducts(id, products, casePayload.updatedAt);
   return getPresalesCase(id);
-}
+});
 
 export function deletePresalesCase(id) {
   return db.prepare('DELETE FROM presales_cases WHERE id = ?').run(id).changes > 0;
@@ -666,7 +703,7 @@ export function getPresalesCases() {
     FROM presales_cases
     ORDER BY CASE WHEN stage IN ('won', 'lost') THEN 1 ELSE 0 END,
       CASE WHEN deadline IS NULL THEN 1 ELSE 0 END, deadline ASC, updated_at DESC
-  `).all();
+  `).all().map(attachPresalesProducts);
 }
 
 export function getPresalesDashboardSummary(referenceIso, horizonIso) {
@@ -821,9 +858,14 @@ export function searchPresales(query) {
       OR c.manufacturer LIKE ? OR c.product_family LIKE ? OR c.proposed_model LIKE ?
       OR c.competitors LIKE ? OR c.notes LIKE ? OR r.title LIKE ? OR r.reference_no LIKE ?
       OR r.requirement LIKE ? OR r.offered_item LIKE ? OR r.sku LIKE ? OR r.source_ref LIKE ?
+      OR EXISTS (
+        SELECT 1 FROM presales_case_products product
+        WHERE product.case_id = c.id
+          AND (product.manufacturer LIKE ? OR product.product_family LIKE ? OR product.proposed_model LIKE ?)
+      )
     ORDER BY c.updated_at DESC
     LIMIT 50
-  `).all(...Array(14).fill(needle)).map((row) => row.id);
+  `).all(...Array(17).fill(needle)).map((row) => row.id);
   return ids.map((id) => getPresalesCase(id));
 }
 
@@ -831,7 +873,7 @@ export function getPresalesExport(caseId) {
   const presalesCase = getPresalesCase(caseId);
   if (!presalesCase) return null;
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     exportedAt: new Date().toISOString(),
     case: presalesCase,
     records: getPresalesRecords(caseId),
@@ -868,6 +910,8 @@ export function markPresalesReminded(kind, id, timestamp = new Date().toISOStrin
 function normalizePresalesCasePayload(input, timestamp) {
   const title = cleanText(input.title);
   if (!title) throw new Error('Presales dosya başlığı gerekli.');
+  const products = normalizePresalesProducts(input.products, input);
+  const primaryProduct = products[0] || { manufacturer: '', productFamily: '', proposedModel: '' };
   return {
     title,
     customer: cleanText(input.customer),
@@ -875,9 +919,10 @@ function normalizePresalesCasePayload(input, timestamp) {
     stage: normalizePresalesStage(input.stage),
     offerability: normalizeOfferability(input.offerability),
     owner: cleanText(input.owner),
-    manufacturer: cleanText(input.manufacturer),
-    productFamily: cleanText(input.productFamily),
-    proposedModel: cleanText(input.proposedModel),
+    manufacturer: primaryProduct.manufacturer,
+    productFamily: primaryProduct.productFamily,
+    proposedModel: primaryProduct.proposedModel,
+    products,
     competitors: cleanText(input.competitors),
     deadline: input.deadline || null,
     reminderAt: input.reminderAt || null,
@@ -886,6 +931,62 @@ function normalizePresalesCasePayload(input, timestamp) {
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+}
+
+function attachPresalesProducts(presalesCase) {
+  const products = db.prepare(`
+    SELECT id, manufacturer, product_family AS productFamily,
+      proposed_model AS proposedModel, position
+    FROM presales_case_products
+    WHERE case_id = ?
+    ORDER BY position, id
+  `).all(presalesCase.id);
+
+  if (!products.length && (presalesCase.manufacturer || presalesCase.productFamily || presalesCase.proposedModel)) {
+    products.push({
+      manufacturer: presalesCase.manufacturer,
+      productFamily: presalesCase.productFamily,
+      proposedModel: presalesCase.proposedModel,
+      position: 0,
+    });
+  }
+
+  return { ...presalesCase, products };
+}
+
+function replacePresalesCaseProducts(caseId, products, timestamp) {
+  db.prepare('DELETE FROM presales_case_products WHERE case_id = ?').run(caseId);
+  const insert = db.prepare(`
+    INSERT INTO presales_case_products (
+      case_id, manufacturer, product_family, proposed_model, position, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  products.forEach((product, position) => {
+    insert.run(
+      caseId,
+      product.manufacturer,
+      product.productFamily,
+      product.proposedModel,
+      position,
+      timestamp,
+    );
+  });
+}
+
+function normalizePresalesProducts(products, legacyInput = {}) {
+  const source = Array.isArray(products) ? products : [{
+    manufacturer: legacyInput.manufacturer,
+    productFamily: legacyInput.productFamily,
+    proposedModel: legacyInput.proposedModel,
+  }];
+  return source
+    .slice(0, 30)
+    .map((product) => ({
+      manufacturer: cleanText(product?.manufacturer),
+      productFamily: cleanText(product?.productFamily),
+      proposedModel: cleanText(product?.proposedModel),
+    }))
+    .filter((product) => product.manufacturer || product.productFamily || product.proposedModel);
 }
 
 function normalizePresalesRecordPayload(input, timestamp) {

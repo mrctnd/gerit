@@ -1,5 +1,5 @@
 <%
-  const appearance = appearancePreferences || { theme: 'atlas', font: 'modern', motion: 'system' };
+  const appearance = appearancePreferences || { theme: 'atlas', font: 'modern', motion: 'system', scale: 100 };
   const themeColors = {
     atlas: '#102a43',
     forest: '#143a32',
@@ -9,7 +9,7 @@
   const selectedAppearance = (key, value) => appearance[key] === value ? 'true' : 'false';
 %>
 <!doctype html>
-<html lang="tr" data-theme="<%= appearance.theme %>" data-font="<%= appearance.font %>" data-motion="<%= appearance.motion %>">
+<html lang="tr" data-theme="<%= appearance.theme %>" data-font="<%= appearance.font %>" data-motion="<%= appearance.motion %>" data-scale="<%= appearance.scale %>">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -329,6 +329,22 @@
             <button type="button" data-motion-option="system" aria-pressed="<%= selectedAppearance('motion', 'system') %>">Sistemi izle</button>
             <button type="button" data-motion-option="full" aria-pressed="<%= selectedAppearance('motion', 'full') %>">Akıcı</button>
             <button type="button" data-motion-option="reduced" aria-pressed="<%= selectedAppearance('motion', 'reduced') %>">Sakin</button>
+          </div>
+          <div class="motion-preview" aria-hidden="true">
+            <span><i data-motion-preview-marker></i></span>
+            <small data-motion-preview-label><%= appearance.motion === 'full' ? 'Akıcı' : appearance.motion === 'reduced' ? 'Sakin' : 'Sistemi izle' %></small>
+          </div>
+        </section>
+
+        <section class="appearance-section scale-section" aria-labelledby="scale-title">
+          <div class="appearance-section-heading">
+            <h3 id="scale-title">Arayüz ölçeği</h3>
+            <output for="ui-scale" data-scale-output>%<%= appearance.scale %></output>
+          </div>
+          <div class="scale-control">
+            <button type="button" class="scale-step" data-scale-step="-5" aria-label="Arayüzü küçült" title="Arayüzü küçült">−</button>
+            <input id="ui-scale" data-scale-input type="range" min="80" max="160" step="5" value="<%= appearance.scale %>" aria-label="Arayüz ölçeği">
+            <button type="button" class="scale-step" data-scale-step="5" aria-label="Arayüzü büyüt" title="Arayüzü büyüt">+</button>
           </div>
         </section>
 

@@ -26,8 +26,8 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Her iş için yüzde ilerleme, ayrıntılı açıklama ve zaman damgalı çalışma notları
 - Geciken işleri Bugün görünümünün en üstünde kırmızı sabitleme
 - Serbest metin notları, görev kopyalama ve yeniden açma
-- Dört renk paleti, dört yerel font seti ve cihazda saklanan görünüm tercihleri
-- Butonlarda, görev tamamlamada ve görünüm panelinde ölçülü mikro etkileşimler; azaltılmış hareket modu
+- Dört renk paleti, dört yerel font seti, `%80-%160` arayüz ölçeği ve cihazda saklanan görünüm tercihleri
+- Sistem, akıcı ve sakin profillerde belirgin ama ölçülü mikro etkileşimler
 - Masaüstünde yerel Windows bildirimi; isteğe bağlı olarak ntfy ile telefon bildirimi
 - Müşteri, ihale/fırsat referansı, üretici, ürün/model, rakip, termin ve teklif kararıyla Presales Merkezi
 - Şartname maddesi, BOM/kitlist, ürün kararı, rekabet, değişiklik talebi, şartname cevabı, maliyet ve üretici teyidi kayıtları
@@ -124,7 +124,7 @@ call Sam tomorrow 4pm #home p2
 
 ## Presales Merkezi
 
-Sol menüdeki **Presales Merkezi**, her müşteri talebi veya ihale için ayrı bir çalışma dosyası açar. Dosyada müşteri ve referans bilgileri, üretici/ürün seçimi, rakipler, sorumlu, son tarih, sonraki aksiyon, mevcut satış aşaması ve `Teklif verilebilir / Şartlı / Verilemez` kararı tutulur.
+Sol menüdeki **Presales Merkezi**, her müşteri talebi veya ihale için ayrı bir çalışma dosyası açar. Dosyada müşteri ve referans bilgileri, birden fazla üretici/marka, ürün ailesi ve teklif edilen model; rakipler, sorumlu, son tarih, sonraki aksiyon, mevcut satış aşaması ve `Teklif verilebilir / Şartlı / Verilemez` kararı tutulur. Ürün satırları küçük `+` düğmesiyle çoğaltılabilir; satış aşamaları arasında **Yaklaşık maliyet çalışması** da bulunur.
 
 Her dosyanın altında aşağıdaki çalışma türleri ayrı kayıtlar olarak izlenir:
 
@@ -148,11 +148,13 @@ Her kayıtta platform desteği, teklife dahil olma, konfigürasyon uyumu ve lisa
 | `x` | Seçili işi tamamla |
 | `j` / `k` veya oklar | İşler arasında gezin |
 | `g` | Görünüm panelini aç |
+| `Ctrl` + `+` / `-` | Arayüz ölçeğini büyüt / küçült |
+| `Ctrl` + `0` | Arayüz ölçeğini `%100` yap |
 | `Esc` | Aktif alandan çık |
 
 ## Görünümü kişiselleştirme
 
-Üst çubuktaki **Görünüm** düğmesini veya `g` kısayolunu kullanın. Atlas, Orman, Lavanta ve Kehribar paletleri; Modern, Humanist, Editoryal ve Teknik font setleri arasından seçim yapabilirsiniz. Hareket ayarı sistem tercihini izleyebilir, akıcı geçişleri zorlayabilir veya animasyonları sakinleştirebilir.
+Üst çubuktaki **Görünüm** düğmesini veya `g` kısayolunu kullanın. Atlas, Orman, Lavanta ve Kehribar paletleri; Modern, Humanist, Editoryal ve Teknik font setleri arasından seçim yapabilirsiniz. Arayüz ölçeği `%80-%160` arasında ayarlanabilir; özellikle 4K ekranlarda metinler ve kontroller birlikte büyür. Hareket ayarı sistem tercihini izleyebilir, akıcı geçişleri zorlayabilir veya animasyonları kapatabilir; seçim paneldeki canlı önizlemede hemen görülür.
 
 Bu tercihler görevlerle aynı yerel SQLite veritabanında tutulur; dış servise gönderilmez ve masaüstü uygulamasında yeniden başlatma sonrasında korunur. Logo dosyaları ve kullanım notları [`public/brand`](public/brand/README.md) klasöründedir.
 
@@ -197,7 +199,7 @@ Windows masaüstü kurulumunda varsayılan dosya:
 %APPDATA%\Gerit\data\tasks.sqlite3
 ```
 
-Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, presales dosyaları, analiz/kanıt kayıtları, hatırlatma durumları ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Gerit masaüstü sürümü bu verileri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
+Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, presales dosyaları, çoklu ürün satırları, analiz/kanıt kayıtları, hatırlatma durumları ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Eski tek ürün alanları yeni sürüm ilk açıldığında otomatik olarak ürün listesine taşınır. Gerit masaüstü sürümü bu verileri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
 
 Node.js kurulumunda varsayılan dosya:
 

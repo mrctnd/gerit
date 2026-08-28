@@ -1,0 +1,52 @@
+<%
+  const productRows = products && products.length
+    ? products
+    : [{ manufacturer: '', productFamily: '', proposedModel: '' }];
+%>
+<div class="presales-product-editor field-wide" data-product-editor>
+  <div class="product-editor-heading">
+    <div>
+      <span>Teklif ürünleri</span>
+      <small>Her üretici, kategori ve modeli ayrı bir satırda eşleştir.</small>
+    </div>
+    <button class="icon-button product-add-button" type="button" data-add-product aria-label="Ürün satırı ekle" title="Ürün satırı ekle">+</button>
+  </div>
+  <div class="product-entry-list" data-product-rows>
+    <% productRows.forEach((product, index) => { %>
+      <div class="product-entry" data-product-row>
+        <span class="product-entry-index" data-product-index><%= index + 1 %></span>
+        <label class="field">
+          <span>Üretici / marka</span>
+          <input name="manufacturer" value="<%= product.manufacturer || '' %>" placeholder="Lenovo, Dell, HPE, Cisco...">
+        </label>
+        <label class="field">
+          <span>Ürün ailesi / kategori</span>
+          <input name="productFamily" value="<%= product.productFamily || '' %>" placeholder="Rack sunucu, depolama, ağ...">
+        </label>
+        <label class="field">
+          <span>Teklif edilen model</span>
+          <input name="proposedModel" value="<%= product.proposedModel || '' %>" placeholder="Tam model / MTM">
+        </label>
+        <button class="icon-button product-remove-button" type="button" data-remove-product aria-label="Bu ürün satırını kaldır" title="Ürün satırını kaldır">×</button>
+      </div>
+    <% }) %>
+  </div>
+  <template data-product-template>
+    <div class="product-entry" data-product-row>
+      <span class="product-entry-index" data-product-index></span>
+      <label class="field">
+        <span>Üretici / marka</span>
+        <input name="manufacturer" placeholder="Lenovo, Dell, HPE, Cisco...">
+      </label>
+      <label class="field">
+        <span>Ürün ailesi / kategori</span>
+        <input name="productFamily" placeholder="Rack sunucu, depolama, ağ...">
+      </label>
+      <label class="field">
+        <span>Teklif edilen model</span>
+        <input name="proposedModel" placeholder="Tam model / MTM">
+      </label>
+      <button class="icon-button product-remove-button" type="button" data-remove-product aria-label="Bu ürün satırını kaldır" title="Ürün satırını kaldır">×</button>
+    </div>
+  </template>
+</div>

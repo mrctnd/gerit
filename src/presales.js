@@ -2,6 +2,7 @@ export const PRESALES_STAGES = Object.freeze([
   { value: 'intake', label: 'Talep alındı', tone: 'planned' },
   { value: 'spec_review', label: 'Şartname analizi', tone: 'active' },
   { value: 'solution_design', label: 'Ürün ve BOM çalışması', tone: 'active' },
+  { value: 'estimated_cost', label: 'Yaklaşık maliyet çalışması', tone: 'active' },
   { value: 'vendor_confirmation', label: 'Üretici teyidi', tone: 'waiting' },
   { value: 'commercial', label: 'Fiyatlandırma', tone: 'waiting' },
   { value: 'response', label: 'Cevap ve teslim hazırlığı', tone: 'active' },

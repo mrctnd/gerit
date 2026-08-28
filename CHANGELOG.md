@@ -4,6 +4,22 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ## [Yayımlanmadı]
 
+## [0.2.1] - 2026-08-29
+
+### Eklendi
+
+- Presales dosyalarına küçük `+` düğmesiyle birden fazla üretici/marka, ürün ailesi/kategori ve teklif edilen model satırı ekleme.
+- Presales **Mevcut aşama** seçeneklerine **Yaklaşık maliyet çalışması**.
+- Görünüm paneline `%80-%160` arayüz ölçeği, adım düğmeleri ve canlı hareket önizlemesi.
+- Akıcı profilde daha belirgin sayfa/kayıt girişleri ve profesyonel, ölçülü mikro etkileşimler.
+
+### Değişti
+
+- Hareket profilleri artık süre, mesafe ve sıralama açısından birbirinden görünür biçimde ayrılıyor; sakin profil hareketi kapatıyor.
+- Presales liste ve ayrıntı görünümü çoklu ürünleri özetleyecek şekilde genişletildi.
+- Eski tek ürünlü presales verileri ilk açılışta kayıpsız biçimde yeni ürün listesine taşınıyor.
+- Tema, font, hareket ve ölçek tercihleri aynı yerel SQLite veritabanında kalıcı olarak saklanıyor.
+
 ## [0.2.0] - 2026-08-28
 
 ### Eklendi
@@ -65,6 +81,7 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 - Docker, GitHub Actions, Linux VM ve otomatik SQLite yedekleme dosyaları.
 - MIT lisansı ve açık kaynak katkı belgeleri.
 
+[0.2.1]: https://github.com/mrctnd/gerit/releases/tag/v0.2.1
 [0.2.0]: https://github.com/mrctnd/gerit/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mrctnd/gerit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/mrctnd/gerit/releases/tag/v0.1.0

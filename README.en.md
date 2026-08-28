@@ -25,8 +25,8 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - A Workflow view for Planned, In progress, Waiting, and Blocked stages
 - Per-task progress, detailed descriptions, and timestamped work notes
 - Overdue tasks pinned in red at the top of Today
-- Four color palettes, four local font sets, and device-local appearance preferences
-- Restrained micro-interactions for buttons, completion, and appearance controls, plus reduced motion
+- Four color palettes, four local font sets, 80-160% interface scaling, and device-local appearance preferences
+- Distinct but restrained micro-interactions across system, full, and reduced motion profiles
 - Local Windows notifications on desktop, with optional ntfy phone notifications
 - A Presales Center for customer/opportunity data, tender references, vendors, products, competitors, deadlines, and bid decisions
 - Detailed records for specification clauses, BOM/kitlists, product decisions, competition, change requests, responses, cost risks, and vendor questions
@@ -102,13 +102,13 @@ Tasks without a date go to Inbox. The task detail screen tracks stage, progress,
 
 ## Presales Center
 
-Use **Presales Merkezi** in the sidebar to open a separate case for each customer request, tender, or opportunity. A case tracks the customer and reference, vendor and proposed product, competitors, owner, deadline, next action, sales stage, and the current bid/no-bid decision.
+Use **Presales Merkezi** in the sidebar to open a separate case for each customer request, tender, or opportunity. A case tracks the customer and reference; multiple vendor, product-family, and proposed-model rows; competitors, owner, deadline, next action, sales stage, and the current bid/no-bid decision. Add product rows with the compact `+` control. The available stages include **Yaklaşık maliyet çalışması** for estimated-cost work.
 
 Case records cover specification clauses, atomic requirements, BOM/kitlist lines and quantities, product selection, same-segment competition, change requests, specification responses, cost/responsibility risks, and vendor confirmations. Platform capability, quoted inclusion, configuration compatibility, and license/service entitlement are stored as independent evidence gates. Records use the Turkish compliance standard (`Uygun`, `Şartlı Uygun`, `Uygun Değil - Değişiklik Gerekli`, `Teyit / Netleştirme`, and `Kapsam Dışı`), calculate priority from probability, impact, and evidence gap, and can trigger local Windows reminders. JSON export includes the full case and all records.
 
 ## Personalize the interface
 
-Use the **Görünüm** button in the top bar or press `g`. Choose between Atlas, Forest, Violet, and Ember palettes; Modern, Humanist, Editorial, and Technical font sets; and system, full, or reduced motion.
+Use the **Görünüm** button in the top bar or press `g`. Choose between Atlas, Forest, Violet, and Ember palettes; Modern, Humanist, Editorial, and Technical font sets; and system, full, or reduced motion. Scale the complete interface from 80% to 160% for high-density displays, or use `Ctrl` + `+`, `Ctrl` + `-`, and `Ctrl` + `0`. Motion changes are reflected immediately in the live preview.
 
 These preferences remain in the same local SQLite database as your tasks. They are not sent to an external service and are preserved across desktop app restarts. Logo assets and usage guidance live in [`public/brand`](public/brand/README.md).
 
@@ -136,7 +136,7 @@ The Windows desktop installer stores the database here by default:
 %APPDATA%\Gerit\data\tasks.sqlite3
 ```
 
-Each Windows user gets a separate local database. Tasks, work notes, presales cases and evidence records, reminder state, and appearance preferences are persisted in the same SQLite file. The desktop app does not send this data to the cloud, and notifications are shown locally by Windows.
+Each Windows user gets a separate local database. Tasks, work notes, presales cases, multi-product rows, evidence records, reminder state, and appearance preferences are persisted in the same SQLite file. Existing single-product case data is migrated into the product list automatically on first launch. The desktop app does not send this data to the cloud, and notifications are shown locally by Windows.
 
 The default Node.js database is `data/tasks.sqlite3`. Override it with `DATABASE_PATH`.
 
