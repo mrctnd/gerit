@@ -31,7 +31,12 @@ jobs:
           node-version: 24
           cache: npm
       - name: Bağımlılıkları kur
+        if: runner.os != 'Windows'
         run: npm ci
+      - name: Bağımlılıkları kur (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: npm ci --ignore-scripts
       - name: Linux paketini hazırla
         if: runner.os == 'Linux'
         shell: bash
