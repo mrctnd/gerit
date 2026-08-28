@@ -36,7 +36,19 @@ jobs:
       - name: Bağımlılıkları kur (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: npm ci --ignore-scripts --omit=optional --no-audit --no-fund
+        run: |
+          $cache = Join-Path $env:RUNNER_TEMP 'npm-cache'
+          npm ci --ignore-scripts --omit=optional --no-audit --no-fund --prefer-online --cache "$cache"
+          if ($LASTEXITCODE -ne 0) {
+            $log = Get-ChildItem -Path (Join-Path $cache '_logs') -Filter '*-debug-0.log' -ErrorAction SilentlyContinue |
+              Sort-Object LastWriteTime -Descending |
+              Select-Object -First 1
+            if ($log) {
+              $details = (Get-Content -LiteralPath $log.FullName -Tail 80) -join '%0A'
+              Write-Output "::error title=npm ci failed::$details"
+            }
+            exit $LASTEXITCODE
+          }
       - name: Linux paketini hazırla
         if: runner.os == 'Linux'
         shell: bash
