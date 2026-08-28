@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { after, before, test } from 'node:test';
+import { DateTime } from 'luxon';
 import request from 'supertest';
 
 process.env.TZ = 'UTC';
@@ -17,10 +19,10 @@ let dbModule;
 let parseQuickAdd;
 let recurrenceModule;
 let reminders;
+let serverRuntime;
 
 before(async () => {
-  const { default: Database } = await import('better-sqlite3');
-  const legacyDb = new Database(databasePath);
+  const legacyDb = new DatabaseSync(databasePath);
   legacyDb.exec(`
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,6 +52,7 @@ before(async () => {
   ({ createApp: app } = await import('../src/app.js'));
   app = app();
   reminders = await import('../src/reminders.js');
+  serverRuntime = await import('../src/server-runtime.js');
 });
 
 test('eski veritabanı yeni iş akışı alanlarına veri kaybetmeden taşınır', () => {
@@ -302,6 +305,99 @@ test('özel hatırlatma zamanı geldiğinde bildirim yalnızca bir kez gönderil
   }
 });
 
+test('masaüstü sürümü hatırlatmayı dış servis olmadan yerel yayıncıya gönderir', async () => {
+  const task = dbModule.addTask({
+    title: 'Yerel masaüstü bildirimi',
+    dueAt: '2026-08-29T12:00:00.000Z',
+    reminderAt: '2026-08-28T06:00:00.000Z',
+    status: 'planned',
+  });
+  const payloads = [];
+
+  await reminders.checkDueTasks(
+    new Date('2026-08-28T06:00:00.000Z'),
+    async (payload) => payloads.push(payload),
+  );
+
+  const payload = payloads.find((item) => item.message.includes(task.title));
+  assert.ok(payload);
+  assert.match(payload.title, /Gerit hatırlatması/);
+  assert.ok(dbModule.getTask(task.id).reminderSentAt);
+});
+
+test('başarısız bildirim hatırlatmayı gönderilmiş olarak işaretlemez', async () => {
+  const task = dbModule.addTask({
+    title: 'Gönderilemeyen yerel bildirim',
+    dueAt: '2026-08-29T12:00:00.000Z',
+    reminderAt: '2026-08-28T06:00:00.000Z',
+  });
+
+  await assert.rejects(
+    reminders.checkDueTasks(new Date('2026-08-28T06:00:00.000Z'), async () => false),
+    /Bildirim gönderilemedi/,
+  );
+
+  assert.equal(dbModule.getTask(task.id).reminderSentAt, null);
+});
+
+test('günlük özet bildirimi aynı gün yalnızca bir kez gönderilir', async () => {
+  dbModule.addTask({
+    title: 'Günlük özet kontrolü',
+    dueAt: '2026-08-28T08:00:00.000Z',
+  });
+  const payloads = [];
+  const reference = DateTime.fromISO('2026-08-28T10:00:00', { zone: 'Europe/Istanbul' });
+
+  assert.equal(await reminders.sendMorningDigestOnce(reference, async (payload) => payloads.push(payload)), true);
+  assert.equal(await reminders.sendMorningDigestOnce(reference.plus({ hours: 1 }), async (payload) => payloads.push(payload)), false);
+  assert.equal(payloads.length, 1);
+  assert.match(payloads[0].title, /Gerit/);
+  assert.match(payloads[0].message, /Günlük özet kontrolü/);
+});
+
+test('bildirim deneme aksiyonu yapılandırılmış yayıncıya gönderir', async () => {
+  const payloads = [];
+  const runtime = await serverRuntime.startGeritServer({
+    host: '127.0.0.1',
+    port: 0,
+    reminders: false,
+    reminderPublisher: async (payload) => payloads.push(payload),
+    log: false,
+  });
+
+  try {
+    await request(runtime.app)
+      .post('/notifications/test')
+      .type('form')
+      .send({ returnTo: '/today' })
+      .expect(302)
+      .expect('Location', '/today');
+  } finally {
+    await runtime.close();
+  }
+
+  assert.equal(payloads.length, 1);
+  assert.match(payloads[0].title, /Gerit bildirimi hazır/);
+});
+
+test('masaüstü çalışma zamanı boş bir localhost portunda açılıp temiz kapanır', async () => {
+  const runtime = await serverRuntime.startGeritServer({
+    host: '127.0.0.1',
+    port: 0,
+    reminders: false,
+    log: false,
+  });
+
+  try {
+    const response = await fetch(`${runtime.url}/healthz`);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).status, 'ok');
+    assert.equal(runtime.databasePath, databasePath);
+  } finally {
+    await runtime.close();
+  }
+});
+
 test('the default web host is localhost only', async () => {
   const { config } = await import('../src/config.js');
   assert.equal(config.host, '127.0.0.1');
@@ -321,6 +417,28 @@ test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async
   assert.match(response.text, /data-font-option="editorial"/);
   assert.match(response.text, /data-motion-option="reduced"/);
   assert.match(response.text, /src="\/preferences\.js\?v=[^"]+"/);
+  assert.match(response.text, /action="\/notifications\/test"/);
+});
+
+test('appearance preferences persist in SQLite and render on the next page load', async () => {
+  const saveResponse = await request(app)
+    .post('/api/preferences/appearance')
+    .send({ theme: 'forest', font: 'mono', motion: 'reduced' })
+    .expect(200);
+
+  assert.deepEqual(saveResponse.body.appearance, {
+    theme: 'forest',
+    font: 'mono',
+    motion: 'reduced',
+  });
+  assert.deepEqual(dbModule.getAppearancePreferences(), saveResponse.body.appearance);
+
+  const response = await request(app).get('/today').expect(200);
+  assert.match(response.text, /<html lang="tr" data-theme="forest" data-font="mono" data-motion="reduced">/);
+  assert.match(response.text, /data-theme-option="forest" aria-pressed="true"/);
+  assert.match(response.text, /data-font-option="mono" aria-pressed="true"/);
+  assert.match(response.text, /data-motion-option="reduced" aria-pressed="true"/);
+  assert.match(response.text, /yerel veritaban/);
 });
 
 test('Gerit logosu uygulamanın kendi statik dosyası olarak sunulur', async () => {
@@ -334,6 +452,7 @@ test('görünüm değişimleri gecikmeli sayfa giriş animasyonu çalıştırmaz
   const clientScript = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 
   assert.doesNotMatch(clientScript, /runEntranceSequence|page-transition|window\.location\.assign/);
+  assert.doesNotMatch(clientScript, /localStorage/);
 });
 
 test('arayüz dosyaları eski animasyon kodunu önbellekten kullanmaz', async () => {

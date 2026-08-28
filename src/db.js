@@ -1,17 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { config } from './config.js';
 import { nextOccurrence } from './recurrence.js';
 import { normalizeProgress, normalizeTaskStatus } from './workflow.js';
 
 fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
-export const db = new Database(config.databasePath);
-db.pragma('foreign_keys = ON');
-db.pragma('busy_timeout = 5000');
+export const db = new DatabaseSync(config.databasePath);
+db.exec('PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS app_preferences (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -63,10 +68,10 @@ db.exec(`
   SET status = 'completed', progress = 100
   WHERE completed_at IS NOT NULL AND (status <> 'completed' OR progress <> 100);
 `);
-db.pragma('optimize');
+db.exec('PRAGMA optimize;');
 
 function ensureColumn(table, column, definition) {
-  const columns = db.pragma(`table_info(${table})`);
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
   if (!columns.some((item) => item.name === column)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
@@ -78,6 +83,65 @@ const selectColumns = `
   reminder_sent_at AS reminderSentAt, reminded_at AS remindedAt, completed_at AS completedAt,
   created_at AS createdAt, updated_at AS updatedAt
 `;
+
+export const APPEARANCE_DEFAULTS = Object.freeze({
+  theme: 'atlas',
+  font: 'modern',
+  motion: 'system',
+});
+
+const APPEARANCE_ALLOWED = {
+  theme: new Set(['atlas', 'forest', 'violet', 'ember']),
+  font: new Set(['modern', 'humanist', 'editorial', 'mono']),
+  motion: new Set(['system', 'full', 'reduced']),
+};
+
+function normalizeAppearancePreferences(preferences = {}) {
+  const source = preferences && typeof preferences === 'object' ? preferences : {};
+  return Object.fromEntries(
+    Object.entries(APPEARANCE_DEFAULTS).map(([key, defaultValue]) => [
+      key,
+      APPEARANCE_ALLOWED[key].has(source[key]) ? source[key] : defaultValue,
+    ]),
+  );
+}
+
+export function getAppearancePreferences() {
+  return normalizeAppearancePreferences(getAppPreference('appearance', APPEARANCE_DEFAULTS));
+}
+
+export function saveAppearancePreferences(preferences) {
+  const normalized = normalizeAppearancePreferences(preferences);
+  saveAppPreference('appearance', normalized);
+  return normalized;
+}
+
+export function getAppPreference(key, fallback = null) {
+  const row = db.prepare('SELECT value FROM app_preferences WHERE key = ?').get(String(key));
+  if (!row) return fallback;
+
+  try {
+    return JSON.parse(row.value);
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveAppPreference(key, value) {
+  const updatedAt = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO app_preferences (key, value, updated_at)
+    VALUES (@key, @value, @updatedAt)
+    ON CONFLICT(key) DO UPDATE SET
+      value = excluded.value,
+      updated_at = excluded.updated_at
+  `).run({
+    key: String(key),
+    value: JSON.stringify(value),
+    updatedAt,
+  });
+  return value;
+}
 
 const insertStatement = db.prepare(`
   INSERT INTO tasks (
@@ -152,7 +216,7 @@ export function updateTask(id, task) {
   return getTask(id);
 }
 
-export const completeTask = db.transaction((id) => {
+export const completeTask = transaction((id) => {
   const task = db.prepare(`SELECT ${selectColumns} FROM tasks WHERE id = ? AND completed_at IS NULL`).get(id);
   if (!task) return null;
 
@@ -181,6 +245,20 @@ export const completeTask = db.transaction((id) => {
 
   return { completed: { ...task, completedAt }, nextTask };
 });
+
+function transaction(callback) {
+  return (...args) => {
+    db.exec('BEGIN IMMEDIATE;');
+    try {
+      const result = callback(...args);
+      db.exec('COMMIT;');
+      return result;
+    } catch (error) {
+      db.exec('ROLLBACK;');
+      throw error;
+    }
+  };
+}
 
 export function deleteTask(id) {
   return db.prepare('DELETE FROM tasks WHERE id = ?').run(id).changes > 0;

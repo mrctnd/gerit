@@ -2,12 +2,8 @@ FROM node:24-bookworm-slim AS dependencies
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN apt-get update \
-    && apt-get install --yes --no-install-recommends build-essential python3 \
-    && npm ci --omit=dev \
-    && npm cache clean --force \
-    && apt-get purge --yes --auto-remove build-essential python3 \
-    && rm -rf /var/lib/apt/lists/*
+RUN npm ci --omit=dev \
+    && npm cache clean --force
 
 FROM node:24-bookworm-slim AS runtime
 

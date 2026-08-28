@@ -27,13 +27,24 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - Overdue tasks pinned in red at the top of Today
 - Four color palettes, four local font sets, and device-local appearance preferences
 - Restrained micro-interactions for buttons, completion, and appearance controls, plus reduced motion
-- ntfy custom reminders, due alerts, and a daily 07:00 digest
+- Local Windows notifications on desktop, with optional ntfy phone notifications
 - Terminal capture with `t add "..."`
-- Server-rendered Express + EJS UI and a single better-sqlite3 database
+- Server-rendered Express + EJS UI and the built-in `node:sqlite` module
 
 The interface is currently Turkish. English UI localization is welcome as a future contribution.
 
-## Fastest setup: Docker
+## Fastest setup: Windows desktop app
+
+Download `Gerit-Setup-<version>-x64.exe` from [Releases](https://github.com/mrctnd/gerit/releases), run the installer, then open **Gerit** from the Start menu or desktop shortcut.
+
+- No Node.js, Docker, account, or internet connection is required.
+- The app listens only on `127.0.0.1` on your computer and is not exposed to the local network.
+- Tasks and appearance preferences stay in `%APPDATA%\\Gerit\\data\\tasks.sqlite3` and are not sent to another computer.
+- Reminders and the daily digest are delivered as local Windows notifications in the desktop app.
+- Uninstalling preserves the data file, so reinstalling restores the same tasks.
+- Until release binaries are code-signed, Windows SmartScreen may show an unknown-publisher warning.
+
+## Docker setup
 
 Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine with Compose.
 
@@ -45,14 +56,9 @@ docker compose up -d --build
 
 Open [http://127.0.0.1:3030](http://127.0.0.1:3030). Compose publishes the port only on the host loopback interface, even though the process listens on `0.0.0.0` inside the container.
 
-## Release bundle
+## Linux release bundle
 
-Download the Windows or Linux archive from [GitHub Releases](https://github.com/mrctnd/gerit/releases). Node.js 22+ is still required, but production dependencies are bundled.
-
-```powershell
-# Windows PowerShell
-.\gerit\scripts\start.ps1
-```
+Download the Linux archive from [GitHub Releases](https://github.com/mrctnd/gerit/releases). Node.js 22.13+ is still required, but production dependencies are bundled.
 
 ```sh
 # Linux
@@ -70,6 +76,15 @@ npm run setup
 npm start
 ```
 
+To run the desktop app from source or produce the Windows installer:
+
+```powershell
+npm run desktop
+npm run desktop:dist
+```
+
+The installer is written to `release/desktop`.
+
 ## Quick-add examples
 
 ```text
@@ -85,7 +100,7 @@ Tasks without a date go to Inbox. The task detail screen tracks stage, progress,
 
 Use the **Görünüm** button in the top bar or press `g`. Choose between Atlas, Forest, Violet, and Ember palettes; Modern, Humanist, Editorial, and Technical font sets; and system, full, or reduced motion.
 
-These preferences remain in the browser's local storage and are never sent to the database or an external service. Logo assets and usage guidance live in [`public/brand`](public/brand/README.md).
+These preferences remain in the same local SQLite database as your tasks. They are not sent to an external service and are preserved across desktop app restarts. Logo assets and usage guidance live in [`public/brand`](public/brand/README.md).
 
 ## ntfy phone setup
 
@@ -99,9 +114,19 @@ These preferences remain in the browser's local storage and are never sent to th
 
 4. Restart Gerit.
 
-Treat a public ntfy topic name like a password. Custom reminder times are configured on each task and must be earlier than the deadline. `APP_TIMEZONE` controls reminder and digest time; `NTFY_SERVER` can point to a self-hosted ntfy instance.
+In the desktop app, use the **Dene** button in the top bar to test local notifications. While Gerit is open, it checks custom reminders and due tasks every minute and sends the daily digest at 07:00. If you open the app after 07:00, the digest is sent once for that day.
+
+In Node.js/web installs, Gerit uses ntfy for phone notifications. Treat a public ntfy topic name like a password. Custom reminder times are configured on each task and must be earlier than the deadline. `APP_TIMEZONE` controls reminder and digest time; `NTFY_SERVER` can point to a self-hosted ntfy instance.
 
 ## Database location and backup
+
+The Windows desktop installer stores the database here by default:
+
+```text
+%APPDATA%\Gerit\data\tasks.sqlite3
+```
+
+Each Windows user gets a separate local database. Tasks, work notes, reminder state, and appearance preferences are persisted in the same SQLite file. The desktop app does not send task data to the cloud, and notifications are shown locally by Windows.
 
 The default Node.js database is `data/tasks.sqlite3`. Override it with `DATABASE_PATH`.
 

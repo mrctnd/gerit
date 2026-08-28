@@ -1,5 +1,4 @@
 (() => {
-  const storageKey = 'gerit.appearance.v1';
   const defaults = { theme: 'atlas', font: 'modern', motion: 'system' };
   const labels = {
     theme: { atlas: 'Atlas', forest: 'Orman', violet: 'Lavanta', ember: 'Kehribar' },
@@ -24,6 +23,8 @@
   const progressInput = document.querySelector('input[name="progress"]');
   const progressOutput = document.querySelector('[data-progress-output]');
   let selectedIndex = rows.length ? 0 : -1;
+  let pendingPreferences = null;
+  let preferenceSaveVersion = 0;
 
   function readPreferences() {
     return {
@@ -33,11 +34,36 @@
     };
   }
 
-  function writePreferences(preferences) {
+  function flushPreferencesWithBeacon() {
+    if (!pendingPreferences || typeof navigator.sendBeacon !== 'function') return;
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify(preferences));
+      const payload = new Blob([JSON.stringify(pendingPreferences)], { type: 'application/json' });
+      navigator.sendBeacon('/api/preferences/appearance', payload);
     } catch {
-      // The app remains usable when browser storage is unavailable.
+      // The active save request remains the source of truth.
+    }
+  }
+
+  function writePreferences(preferences) {
+    const saveVersion = ++preferenceSaveVersion;
+    pendingPreferences = preferences;
+    try {
+      fetch('/api/preferences/appearance', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferences),
+        keepalive: true,
+      }).then((response) => {
+        if (!response.ok) throw new Error('appearance-save-failed');
+        if (saveVersion === preferenceSaveVersion) pendingPreferences = null;
+      }).catch(() => {
+        announce('Görünüm kaydedilemedi; yeniden deneyin.');
+      });
+    } catch {
+      announce('Görünüm kaydedilemedi; yeniden deneyin.');
     }
   }
 
@@ -268,6 +294,7 @@
   progressInput?.addEventListener('input', syncProgress);
 
   systemMotion.addEventListener?.('change', syncAppearanceControls);
+  window.addEventListener('pagehide', flushPreferencesWithBeacon);
   syncProgress();
   syncAppearanceControls();
 })();

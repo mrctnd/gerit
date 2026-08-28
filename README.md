@@ -28,11 +28,22 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Serbest metin notları, görev kopyalama ve yeniden açma
 - Dört renk paleti, dört yerel font seti ve cihazda saklanan görünüm tercihleri
 - Butonlarda, görev tamamlamada ve görünüm panelinde ölçülü mikro etkileşimler; azaltılmış hareket modu
-- ntfy ile özel hatırlatma anı, son tarih uyarısı ve her sabah 07:00 günlük özet
+- Masaüstünde yerel Windows bildirimi; isteğe bağlı olarak ntfy ile telefon bildirimi
 - Her terminalden `t add "..."` ile hızlı yakalama
-- Express + EJS + better-sqlite3; istemci çerçevesi ve bulut hesabı yok
+- Express + EJS + yerleşik `node:sqlite`; istemci çerçevesi ve bulut hesabı yok
 
-## En kolay kurulum: Docker
+## En kolay kurulum: Windows masaüstü uygulaması
+
+[Releases](https://github.com/mrctnd/gerit/releases) sayfasından `Gerit-Setup-<sürüm>-x64.exe` dosyasını indirin ve kurulumu çalıştırın. Başlat menüsü veya masaüstündeki **Gerit** kısayolundan açabilirsiniz.
+
+- Node.js, Docker, hesap veya internet bağlantısı gerekmez.
+- Uygulama yalnızca kendi bilgisayarınızdaki `127.0.0.1` adresini kullanır; yerel ağa açılmaz.
+- Görevler ve görünüm tercihleri `%APPDATA%\\Gerit\\data\\tasks.sqlite3` dosyasında tutulur ve başka bir bilgisayara gönderilmez.
+- Masaüstü sürümünde hatırlatmalar ve günlük özet Windows bildirimi olarak yerel gönderilir.
+- Kaldırma işlemi veri dosyasını silmez. Yeniden kurduğunuzda görevleriniz kaldığı yerden açılır.
+- Kurulum paketi henüz kod imzalı değilse Windows SmartScreen ilk çalıştırmada yayıncı uyarısı gösterebilir.
+
+## Docker ile kurulum
 
 [Docker Desktop](https://www.docker.com/products/docker-desktop/) veya Docker Engine + Compose gerekir.
 
@@ -50,15 +61,9 @@ docker compose down                # durdur
 git pull --ff-only && docker compose up -d --build   # güncelle
 ```
 
-## İndirilebilir sürüm paketi
+## Linux arşiv paketi
 
-[Releases](https://github.com/mrctnd/gerit/releases) sayfasındaki Windows veya Linux paketini indirin ve arşivi açın. Node.js 22+ kurulu olmalıdır.
-
-Windows PowerShell:
-
-```powershell
-.\gerit\scripts\start.ps1
-```
+[Releases](https://github.com/mrctnd/gerit/releases) sayfasındaki Linux paketini indirin ve arşivi açın. Node.js 22.13+ kurulu olmalıdır.
 
 Linux:
 
@@ -71,7 +76,7 @@ Paketler üretim bağımlılıklarını içerir; ilk açılışta `.env` ve veri
 
 ## Node.js ile kurulum
 
-Node.js 22 veya daha yenisi gerekir.
+Node.js 22.13 veya daha yenisi gerekir.
 
 ```sh
 git clone https://github.com/mrctnd/gerit.git
@@ -86,6 +91,15 @@ Geliştirme sırasında otomatik yeniden başlatma:
 ```sh
 npm run dev
 ```
+
+Masaüstü sürümünü kaynak koddan açmak veya Windows kurulum dosyasını üretmek için:
+
+```powershell
+npm run desktop
+npm run desktop:dist
+```
+
+Kurulum dosyası `release/desktop` klasöründe oluşturulur.
 
 ## Hızlı ekleme
 
@@ -119,7 +133,7 @@ call Sam tomorrow 4pm #home p2
 
 Üst çubuktaki **Görünüm** düğmesini veya `g` kısayolunu kullanın. Atlas, Orman, Lavanta ve Kehribar paletleri; Modern, Humanist, Editoryal ve Teknik font setleri arasından seçim yapabilirsiniz. Hareket ayarı sistem tercihini izleyebilir, akıcı geçişleri zorlayabilir veya animasyonları sakinleştirebilir.
 
-Bu tercihler yalnızca tarayıcının yerel depolamasında tutulur; veritabanına ya da bir dış servise gönderilmez. Logo dosyaları ve kullanım notları [`public/brand`](public/brand/README.md) klasöründedir.
+Bu tercihler görevlerle aynı yerel SQLite veritabanında tutulur; dış servise gönderilmez ve masaüstü uygulamasında yeniden başlatma sonrasında korunur. Logo dosyaları ve kullanım notları [`public/brand`](public/brand/README.md) klasöründedir.
 
 ## Terminal komutu
 
@@ -150,9 +164,19 @@ Komut web uygulamasıyla aynı `.env` ve SQLite dosyasını kullanır. Global ba
 
 5. Gerit'i yeniden başlatın.
 
-Gerit her dakika özel hatırlatmaları ve son tarihi gelen işleri kontrol eder; saat 07:00'de de günün listesini gönderir. Bir işin özel hatırlatma zamanı ayrıntı ekranından seçilir ve son tarihten önce olmalıdır. Saat dilimini `APP_TIMEZONE`, sunucuyu `NTFY_SERVER` belirler. Herkese açık `ntfy.sh` kullanıyorsanız konu adını parola gibi koruyun.
+Masaüstü uygulamasında üst bardaki **Dene** düğmesiyle yerel bildirimi kontrol edebilirsiniz. Gerit açıkken her dakika özel hatırlatmaları ve son tarihi gelen işleri kontrol eder; saat 07:00'de günün listesini gönderir. Uygulamayı 07:00'den sonra açarsanız günlük özet o gün yalnızca bir kez gönderilir.
+
+Node.js/web kurulumunda telefon bildirimi için Gerit ntfy kullanır. Bir işin özel hatırlatma zamanı ayrıntı ekranından seçilir ve son tarihten önce olmalıdır. Saat dilimini `APP_TIMEZONE`, sunucuyu `NTFY_SERVER` belirler. Herkese açık `ntfy.sh` kullanıyorsanız konu adını parola gibi koruyun.
 
 ## Veriniz nerede?
+
+Windows masaüstü kurulumunda varsayılan dosya:
+
+```text
+%APPDATA%\Gerit\data\tasks.sqlite3
+```
+
+Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, hatırlatma durumları ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Gerit masaüstü sürümü görevleri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
 
 Node.js kurulumunda varsayılan dosya:
 

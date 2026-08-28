@@ -1,7 +1,9 @@
 {
   "name": "gerit",
-  "version": "0.1.0",
+  "productName": "Gerit",
+  "version": "0.1.1",
   "description": "A Turkish, keyboard-first, local-first task manager for focused work.",
+  "main": "electron/main.js",
   "license": "MIT",
   "author": "Gerit contributors",
   "homepage": "https://github.com/mrctnd/gerit#readme",
@@ -12,20 +14,13 @@
     "type": "git",
     "url": "git+https://github.com/mrctnd/gerit.git"
   },
-  "keywords": [
-    "task-manager",
-    "todo",
-    "local-first",
-    "sqlite",
-    "turkish",
-    "self-hosted"
-  ],
   "files": [
     "bin",
     "public",
     "scripts",
     "src",
     "views",
+    "electron",
     ".env.example",
     "CHANGELOG.md",
     "LICENSE",
@@ -36,15 +31,7 @@
     "t": "./bin/t.js",
     "gerit": "./bin/t.js"
   },
-  "scripts": {
-    "setup": "node scripts/setup.js",
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "test": "node --test --test-concurrency=1",
-    "check": "npm test && npm audit --omit=dev"
-  },
   "dependencies": {
-    "better-sqlite3": "12.11.1",
     "chrono-node": "2.10.1",
     "dotenv": "17.4.2",
     "ejs": "6.0.1",
@@ -53,11 +40,8 @@
     "node-cron": "4.6.0",
     "rrule": "2.8.1"
   },
-  "devDependencies": {
-    "supertest": "7.2.2"
-  },
   "engines": {
-    "node": ">=22",
+    "node": ">=22.13",
     "npm": ">=10"
   }
 }

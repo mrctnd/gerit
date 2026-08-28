@@ -12,6 +12,7 @@ export const config = {
   host: process.env.HOST?.trim() || '127.0.0.1',
   port: Number.parseInt(process.env.PORT || '3030', 10),
   timezone: process.env.APP_TIMEZONE || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  desktopApp: process.env.GERIT_DESKTOP === '1',
   databasePath: path.isAbsolute(configuredDatabase)
     ? configuredDatabase
     : path.resolve(appRoot, configuredDatabase),

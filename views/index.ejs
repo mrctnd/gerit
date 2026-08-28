@@ -1,10 +1,20 @@
+<%
+  const appearance = appearancePreferences || { theme: 'atlas', font: 'modern', motion: 'system' };
+  const themeColors = {
+    atlas: '#102a43',
+    forest: '#143a32',
+    violet: '#302451',
+    ember: '#3b2a2a',
+  };
+  const selectedAppearance = (key, value) => appearance[key] === value ? 'true' : 'false';
+%>
 <!doctype html>
-<html lang="tr" data-theme="atlas" data-font="modern" data-motion="system">
+<html lang="tr" data-theme="<%= appearance.theme %>" data-font="<%= appearance.font %>" data-motion="<%= appearance.motion %>">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="İşlerini hızlı, sade ve güvenli biçimde yöneten kişisel görev merkezi.">
-    <meta name="theme-color" content="#102a43">
+    <meta name="theme-color" content="<%= themeColors[appearance.theme] || themeColors.atlas %>">
     <title><%= view.title %> · Gerit</title>
     <link rel="icon" type="image/png" href="/brand/gerit-mark.png">
     <link rel="apple-touch-icon" href="/brand/gerit-mark.png">
@@ -94,9 +104,18 @@
             <span class="appearance-trigger-label">Görünüm</span>
             <kbd>G</kbd>
           </button>
-          <div class="local-badge <%= config.notificationsEnabled ? 'notifications-on' : '' %>" title="<%= config.notificationsEnabled ? 'ntfy bildirimleri etkin' : 'Bildirimler için NTFY_TOPIC ayarlayın' %>">
-            <span aria-hidden="true"></span> <%= config.notificationsEnabled ? 'Bildirim açık' : 'Şirket içi' %>
+          <div class="local-badge <%= config.notificationsEnabled ? 'notifications-on' : '' %>" title="<%= config.notificationMode === 'desktop' ? 'Yerel masaüstü bildirimleri etkin' : config.notificationsEnabled ? 'ntfy bildirimleri etkin' : 'Bildirimler için NTFY_TOPIC ayarlayın' %>">
+            <span aria-hidden="true"></span> <%= config.notificationMode === 'desktop' ? 'Yerel bildirim' : config.notificationsEnabled ? 'Bildirim açık' : 'Şirket içi' %>
           </div>
+          <% if (config.notificationsEnabled) { %>
+            <form class="notification-test-form" action="/notifications/test" method="post">
+              <input type="hidden" name="returnTo" value="<%= returnPath %>">
+              <button type="submit" title="Bildirim dene" aria-label="Bildirim dene">
+                <span aria-hidden="true">♢</span>
+                <span>Dene</span>
+              </button>
+            </form>
+          <% } %>
         </header>
 
         <div class="page-wrap">
@@ -240,22 +259,22 @@
             <span>Dört dengeli çalışma modu</span>
           </div>
           <div class="palette-grid" role="group" aria-label="Renk paleti seçimi">
-            <button class="palette-option" type="button" data-theme-option="atlas" aria-pressed="true">
+            <button class="palette-option" type="button" data-theme-option="atlas" aria-pressed="<%= selectedAppearance('theme', 'atlas') %>">
               <span class="palette-preview palette-atlas" aria-hidden="true"><i></i><i></i><i></i></span>
               <span><strong>Atlas</strong><small>Lacivert · Turkuaz</small></span>
               <b aria-hidden="true">✓</b>
             </button>
-            <button class="palette-option" type="button" data-theme-option="forest" aria-pressed="false">
+            <button class="palette-option" type="button" data-theme-option="forest" aria-pressed="<%= selectedAppearance('theme', 'forest') %>">
               <span class="palette-preview palette-forest" aria-hidden="true"><i></i><i></i><i></i></span>
               <span><strong>Orman</strong><small>Çam · Nane</small></span>
               <b aria-hidden="true">✓</b>
             </button>
-            <button class="palette-option" type="button" data-theme-option="violet" aria-pressed="false">
+            <button class="palette-option" type="button" data-theme-option="violet" aria-pressed="<%= selectedAppearance('theme', 'violet') %>">
               <span class="palette-preview palette-violet" aria-hidden="true"><i></i><i></i><i></i></span>
               <span><strong>Lavanta</strong><small>Mürdüm · Leylak</small></span>
               <b aria-hidden="true">✓</b>
             </button>
-            <button class="palette-option" type="button" data-theme-option="ember" aria-pressed="false">
+            <button class="palette-option" type="button" data-theme-option="ember" aria-pressed="<%= selectedAppearance('theme', 'ember') %>">
               <span class="palette-preview palette-ember" aria-hidden="true"><i></i><i></i><i></i></span>
               <span><strong>Kehribar</strong><small>Kömür · Mercan</small></span>
               <b aria-hidden="true">✓</b>
@@ -269,10 +288,10 @@
             <span>Dış bağlantı gerektirmeyen yerel font setleri</span>
           </div>
           <div class="font-grid" role="group" aria-label="Yazı karakteri seçimi">
-            <button class="font-option" type="button" data-font-option="modern" aria-pressed="true"><b>Aa</b><span>Modern</span><small>Temiz ve dengeli</small></button>
-            <button class="font-option" type="button" data-font-option="humanist" aria-pressed="false"><b>Aa</b><span>Humanist</span><small>Sıcak ve okunaklı</small></button>
-            <button class="font-option" type="button" data-font-option="editorial" aria-pressed="false"><b>Aa</b><span>Editoryal</span><small>Klasik ve ciddi</small></button>
-            <button class="font-option" type="button" data-font-option="mono" aria-pressed="false"><b>Aa</b><span>Teknik</span><small>Keskin ve ritmik</small></button>
+            <button class="font-option" type="button" data-font-option="modern" aria-pressed="<%= selectedAppearance('font', 'modern') %>"><b>Aa</b><span>Modern</span><small>Temiz ve dengeli</small></button>
+            <button class="font-option" type="button" data-font-option="humanist" aria-pressed="<%= selectedAppearance('font', 'humanist') %>"><b>Aa</b><span>Humanist</span><small>Sıcak ve okunaklı</small></button>
+            <button class="font-option" type="button" data-font-option="editorial" aria-pressed="<%= selectedAppearance('font', 'editorial') %>"><b>Aa</b><span>Editoryal</span><small>Klasik ve ciddi</small></button>
+            <button class="font-option" type="button" data-font-option="mono" aria-pressed="<%= selectedAppearance('font', 'mono') %>"><b>Aa</b><span>Teknik</span><small>Keskin ve ritmik</small></button>
           </div>
         </section>
 
@@ -282,14 +301,14 @@
             <span>Geçiş yoğunluğunu seç</span>
           </div>
           <div class="motion-options" role="group" aria-label="Hareket tercihi">
-            <button type="button" data-motion-option="system" aria-pressed="true">Sistemi izle</button>
-            <button type="button" data-motion-option="full" aria-pressed="false">Akıcı</button>
-            <button type="button" data-motion-option="reduced" aria-pressed="false">Sakin</button>
+            <button type="button" data-motion-option="system" aria-pressed="<%= selectedAppearance('motion', 'system') %>">Sistemi izle</button>
+            <button type="button" data-motion-option="full" aria-pressed="<%= selectedAppearance('motion', 'full') %>">Akıcı</button>
+            <button type="button" data-motion-option="reduced" aria-pressed="<%= selectedAppearance('motion', 'reduced') %>">Sakin</button>
           </div>
         </section>
 
         <footer class="appearance-footer">
-          <p><span aria-hidden="true">●</span> Tercihler yalnızca bu tarayıcıda saklanır.</p>
+          <p><span aria-hidden="true">●</span> Tercihler bu bilgisayarın yerel veritabanında saklanır.</p>
           <button type="button" class="reset-appearance" data-reset-appearance>Varsayılana dön</button>
         </footer>
       </div>

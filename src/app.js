@@ -2,6 +2,7 @@ import path from 'node:path';
 import express from 'express';
 import { appRoot, config } from './config.js';
 import {
+  getAppearancePreferences,
   addTaskNote,
   addTask,
   completeTask,
@@ -21,6 +22,7 @@ import {
   healthCheck,
   reopenTask,
   searchTasks,
+  saveAppearancePreferences,
   updateTask,
 } from './db.js';
 import {
@@ -36,9 +38,10 @@ import {
 } from './dates.js';
 import { parseQuickAdd } from './parser.js';
 import { describeRecurrence, parseRecurrence } from './recurrence.js';
+import { publishNotification } from './reminders.js';
 import { TASK_STATUSES, normalizeProgress, taskStatusMeta } from './workflow.js';
 
-export function createApp() {
+export function createApp({ notificationPublisher } = {}) {
   const app = express();
   const assetVersion = Date.now().toString(36);
   app.disable('x-powered-by');
@@ -52,6 +55,7 @@ export function createApp() {
     next();
   });
   app.use(express.urlencoded({ extended: false, limit: '64kb' }));
+  app.use(express.json({ limit: '8kb' }));
   app.use(express.static(path.join(appRoot, 'public'), {
     maxAge: 0,
     etag: true,
@@ -79,9 +83,11 @@ export function createApp() {
     res.locals.summary = getWorkSummary(today.start, today.end, new Date().toISOString());
     res.locals.currentPath = req.path;
     res.locals.returnPath = req.originalUrl;
+    res.locals.appearancePreferences = getAppearancePreferences();
     res.locals.config = {
       timezone: config.timezone,
-      notificationsEnabled: Boolean(config.ntfyTopic),
+      notificationsEnabled: config.desktopApp || Boolean(config.ntfyTopic),
+      notificationMode: config.desktopApp ? 'desktop' : config.ntfyTopic ? 'ntfy' : 'off',
     };
     res.locals.taskStatuses = TASK_STATUSES;
     res.locals.assetVersion = assetVersion;
@@ -92,6 +98,34 @@ export function createApp() {
   });
 
   app.get('/', (_req, res) => res.redirect('/today'));
+
+  app.get('/api/preferences/appearance', (_req, res) => {
+    res.json({ appearance: getAppearancePreferences() });
+  });
+
+  app.post('/api/preferences/appearance', (req, res, next) => {
+    try {
+      res.json({ appearance: saveAppearancePreferences(req.body) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/notifications/test', async (req, res, next) => {
+    try {
+      const sent = await publishNotification({
+        title: 'Gerit bildirimi hazır',
+        message: 'Hatırlatmalar ve günlük özet bu bilgisayarda yerel olarak gösterilecek.',
+        priority: '3',
+        tags: 'bell,clipboard',
+      }, notificationPublisher);
+
+      if (!sent) throw new Error('Bildirimler etkin değil.');
+      res.redirect(safeReturnTo(req.body.returnTo, '/today'));
+    } catch (error) {
+      next(error);
+    }
+  });
 
   app.get('/today', (_req, res) => {
     const range = todayRange();
@@ -336,7 +370,8 @@ export function createApp() {
   app.use((error, _req, res, _next) => {
     const badRequest = error.message?.includes('gerekli')
       || error.message?.includes('RRULE')
-      || error.message?.includes('Hatırlatma');
+      || error.message?.includes('Hatırlatma')
+      || error.message?.includes('Bildirim');
     if (!badRequest) console.error(error);
     res.status(badRequest ? 400 : 500);
     renderPage(res, {

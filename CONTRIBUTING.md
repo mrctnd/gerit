@@ -4,7 +4,7 @@ Katkılar memnuniyetle karşılanır. Küçük düzeltmeler için doğrudan pull
 
 ## Geliştirme ortamı
 
-1. Node.js 22 veya daha yenisini kurun.
+1. Node.js 22.13 veya daha yenisini kurun.
 2. Depoyu fork edip klonlayın.
 3. `npm ci` ve ardından `npm run setup` çalıştırın.
 4. `npm run dev` ile geliştirme sunucusunu başlatın.

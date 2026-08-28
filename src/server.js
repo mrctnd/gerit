@@ -1,18 +1,16 @@
-import { createApp } from './app.js';
-import { config } from './config.js';
-import { startReminders } from './reminders.js';
+import { startGeritServer } from './server-runtime.js';
 
-const app = createApp();
-const server = app.listen(config.port, config.host, () => {
-  console.log(`Gerit hazır: http://${config.host}:${config.port}`);
-  console.log(`Veritabanı: ${config.databasePath}`);
-});
+const runtime = await startGeritServer();
+let shuttingDown = false;
 
-const scheduledJobs = startReminders();
-
-function shutdown() {
-  for (const job of scheduledJobs) job.stop();
-  server.close(() => process.exit(0));
+async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  try {
+    await runtime.close();
+  } finally {
+    process.exit(0);
+  }
 }
 
 process.on('SIGINT', shutdown);

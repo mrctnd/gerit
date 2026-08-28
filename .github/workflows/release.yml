@@ -30,30 +30,31 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Üretim bağımlılıklarını kur
-        run: npm ci --omit=dev
+      - name: Bağımlılıkları kur
+        run: npm ci
       - name: Linux paketini hazırla
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          npm prune --omit=dev
           mkdir -p release/gerit
           cp -R bin public scripts src views node_modules release/gerit/
           cp .env.example CHANGELOG.md LICENSE README.md README.en.md package.json package-lock.json release/gerit/
           chmod +x release/gerit/scripts/start.sh
           tar -czf "gerit-${GITHUB_REF_NAME}-linux-x64.tar.gz" -C release gerit
-      - name: Windows paketini hazırla
+      - name: Windows kurulum paketini hazırla
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path release/gerit | Out-Null
-          Copy-Item bin,public,scripts,src,views,node_modules -Destination release/gerit -Recurse
-          Copy-Item .env.example,CHANGELOG.md,LICENSE,README.md,README.en.md,package.json,package-lock.json -Destination release/gerit
-          tar -a -c -f "gerit-$env:GITHUB_REF_NAME-windows-x64.zip" -C release gerit
+          npm run desktop:dist
+          Copy-Item release/desktop/Gerit-Setup-*.exe .
       - name: Paketi yükle
         uses: actions/upload-artifact@v7.0.1
         with:
           name: gerit-${{ matrix.asset }}
-          path: gerit-*
+          path: |
+            gerit-*
+            Gerit-Setup-*.exe
           if-no-files-found: error
           retention-days: 7
 

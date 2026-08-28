@@ -57,7 +57,7 @@
       <label class="field">
         <span>Özel hatırlatma</span>
         <input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(task.reminderAt) %>">
-        <small>Son tarihten önce olmalı · <%= config.notificationsEnabled ? 'ntfy etkin' : 'ntfy henüz ayarlı değil' %></small>
+        <small>Son tarihten önce olmalı · <%= config.notificationMode === 'desktop' ? 'yerel bildirim etkin' : config.notificationsEnabled ? 'ntfy etkin' : 'ntfy henüz ayarlı değil' %></small>
       </label>
       <label class="field">
         <span>Tekrar</span>

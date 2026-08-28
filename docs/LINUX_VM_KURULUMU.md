@@ -82,7 +82,7 @@ Mevcut SSH oturumunu kapatmadan ikinci bir terminalden tekrar bağlanın. Bağla
 ```bash
 sudo apt update
 sudo apt full-upgrade -y
-sudo apt install -y git curl ca-certificates gnupg build-essential nginx sqlite3 apache2-utils ufw unattended-upgrades
+sudo apt install -y git curl ca-certificates gnupg nginx sqlite3 apache2-utils ufw unattended-upgrades
 sudo timedatectl set-timezone Europe/Istanbul
 ```
 
@@ -126,7 +126,7 @@ node --version
 npm --version
 ```
 
-`node --version` çıktısı `v24...` olmalıdır. `better-sqlite3` için hazır ikili bulunamazsa kurduğumuz `build-essential` paketi yerel derlemeyi karşılar.
+`node --version` çıktısı `v24...` olmalıdır. Gerit yerleşik `node:sqlite` modülünü kullandığı için ayrıca bir SQLite Node eklentisi derlemez.
 
 ## 6. Gerit sistem kullanıcısını ve dizinlerini oluşturun
 
