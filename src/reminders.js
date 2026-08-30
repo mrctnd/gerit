@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import { DateTime } from 'luxon';
 import { config } from './config.js';
 import { dueMeta, now, todayRange, digestDate } from './dates.js';
 import {
@@ -6,6 +7,9 @@ import {
   getCustomReminders,
   getDuePresalesReminders,
   getDueForReminder,
+  getNotificationPreferences,
+  getPresalesAttentionItems,
+  getPresalesDashboardSummary,
   getTodayTasks,
   markCustomReminded,
   markPresalesReminded,
@@ -37,7 +41,7 @@ export function startReminders({ publisher } = {}) {
       timezone: config.timezone,
       noOverlap: true,
     }),
-    cron.schedule('0 7 * * *', () => runDigest(now()), {
+    cron.schedule('0 * * * *', () => runDigest(now()), {
       timezone: config.timezone,
       noOverlap: true,
     }),
@@ -45,7 +49,7 @@ export function startReminders({ publisher } = {}) {
 
   runDueCheck();
   const startupReference = now();
-  if (startupReference.hour >= 7) runDigest(startupReference);
+  runDigest(startupReference);
 
   console.log(publisher ? 'Yerel masaüstü hatırlatıcıları etkin.' : 'ntfy hatırlatıcıları etkin.');
   return tasks;
@@ -61,6 +65,8 @@ export async function publishNotification(payload, publisher) {
 export async function checkDueTasks(reference = new Date(), publisher) {
   const activePublisher = resolvePublisher(publisher);
   if (!activePublisher) return 0;
+  const preferences = getNotificationPreferences();
+  if (isQuietHour(reference, preferences)) return 0;
   const referenceIso = reference.toISOString();
   const customReminders = getCustomReminders(referenceIso);
   const customTaskIds = new Set(customReminders.map((task) => task.id));
@@ -77,6 +83,7 @@ export async function checkDueTasks(reference = new Date(), publisher) {
       message: details ? `${task.title}\n${details}` : task.title,
       priority: task.priority === 1 ? '5' : task.priority === 2 ? '4' : '3',
       tags: 'bell,clipboard',
+      route: `/tasks/${task.id}/edit`,
     }, activePublisher);
     markCustomReminded(task.id);
     if (task.dueAt && task.dueAt <= referenceIso) markReminded(task.id);
@@ -93,6 +100,7 @@ export async function checkDueTasks(reference = new Date(), publisher) {
       message: details ? `${task.title}\n${details}` : task.title,
       priority: task.priority === 1 ? '5' : task.priority === 2 ? '4' : '3',
       tags: 'alarm_clock,white_check_mark',
+      route: `/tasks/${task.id}/edit`,
     }, activePublisher);
     markReminded(task.id);
     sent += 1;
@@ -108,6 +116,7 @@ export async function checkDueTasks(reference = new Date(), publisher) {
       message: details ? `${item.title}\n${details}` : item.title,
       priority: '4',
       tags: 'briefcase,bell',
+      route: item.route,
     }, activePublisher);
     markPresalesReminded(item.kind, item.id);
     sent += 1;
@@ -119,6 +128,10 @@ export async function checkDueTasks(reference = new Date(), publisher) {
 export async function sendMorningDigestOnce(reference = now(), publisher) {
   const activePublisher = resolvePublisher(publisher);
   if (!activePublisher) return false;
+
+  const preferences = getNotificationPreferences();
+  if (!preferences.dailyDigest || reference.hour < preferences.digestHour
+    || isQuietHour(reference.toJSDate(), preferences)) return false;
 
   const currentDate = reference.toISODate();
   const sentDate = getAppPreference(DAILY_DIGEST_KEY, {})?.sentDate;
@@ -146,13 +159,37 @@ export async function sendMorningDigest(reference = now(), publisher) {
   if (tasks.length > visibleTasks.length) lines.push(`...ve ${tasks.length - visibleTasks.length} iş daha`);
   if (!lines.length) lines.push('Bugün için planlanmış iş yok. Günün açık.');
 
+  const preferences = getNotificationPreferences();
+  let presalesTitle = '';
+  if (preferences.includePresales) {
+    const referenceIso = reference.toUTC().toISO();
+    const horizonIso = reference.plus({ days: 7 }).toUTC().toISO();
+    const summary = getPresalesDashboardSummary(referenceIso, horizonIso);
+    const attention = getPresalesAttentionItems(referenceIso, horizonIso);
+    const critical = attention.filter((item) => item.severity === 'critical').length;
+    lines.push('');
+    lines.push(`Presales: ${summary.active} aktif · ${summary.dueSoon} yakın termin · ${summary.overdueActions} geciken aksiyon`);
+    if (critical) lines.push(`${critical} kritik konu Aksiyon ve Uyarı Merkezi'nde bekliyor.`);
+    presalesTitle = ` · ${critical} kritik`;
+  }
+
   await deliverNotification({
-    title: `Gerit · ${digestDate(reference)} · ${tasks.length} iş`,
+    title: `Gerit · ${digestDate(reference)} · ${tasks.length} iş${presalesTitle}`,
     message: lines.join('\n'),
     priority: '3',
     tags: 'sunrise,clipboard',
+    route: '/presales/attention',
   }, activePublisher);
   return true;
+}
+
+export function isQuietHour(reference, preferences = getNotificationPreferences()) {
+  if (!preferences.quietHoursEnabled) return false;
+  const referenceDate = reference instanceof Date ? reference : reference?.toJSDate?.() || new Date();
+  const hour = DateTime.fromJSDate(referenceDate).setZone(config.timezone).hour;
+  const { quietStart: start, quietEnd: end } = preferences;
+  if (start === end) return true;
+  return start < end ? hour >= start && hour < end : hour >= start || hour < end;
 }
 
 async function deliverNotification(payload, publisher) {

@@ -1,0 +1,86 @@
+<div class="attention-center">
+  <section class="attention-overview" aria-label="Uyarı özeti">
+    <div>
+      <span>Kritik</span>
+      <strong><%= items.filter((item) => item.severity === 'critical').length %></strong>
+      <small>hemen karar veya aksiyon bekliyor</small>
+    </div>
+    <div>
+      <span>Yaklaşan</span>
+      <strong><%= items.filter((item) => item.severity === 'warning').length %></strong>
+      <small>7 günlük odak penceresinde</small>
+    </div>
+    <div>
+      <span>Geciken aksiyon</span>
+      <strong><%= presalesSummary.overdueActions %></strong>
+      <small><%= presalesSummary.openActions %> açık proje aksiyonu</small>
+    </div>
+    <div>
+      <span>Yaklaşan termin</span>
+      <strong><%= presalesSummary.dueSoon %></strong>
+      <small><%= presalesSummary.overdue %> müşteri termini geçmiş</small>
+    </div>
+  </section>
+
+  <div class="attention-layout">
+    <section class="attention-queue" aria-labelledby="attention-queue-title">
+      <header class="presales-section-heading">
+        <div><p class="eyebrow">Öncelik kuyruğu</p><h2 id="attention-queue-title">Karar ve aksiyon bekleyenler</h2></div>
+        <div class="attention-filters" role="group" aria-label="Uyarı filtresi">
+          <button type="button" class="active" data-attention-filter="all">Tümü</button>
+          <button type="button" data-attention-filter="critical">Kritik</button>
+          <button type="button" data-attention-filter="warning">Yaklaşan</button>
+        </div>
+      </header>
+
+      <% if (items.length) { %>
+        <div class="attention-list">
+          <% items.forEach((item) => { %>
+            <a class="attention-row attention-<%= item.severity %>" href="<%= item.href %>" data-attention-severity="<%= item.severity %>">
+              <span class="attention-indicator" aria-hidden="true"></span>
+              <span class="attention-copy">
+                <small><%= item.typeLabel %></small>
+                <strong><%= item.title %></strong>
+                <span><%= item.context %></span>
+              </span>
+              <span class="attention-due <%= item.dueMeta.overdue ? 'text-danger' : '' %>"><%= item.dueMeta.label || (item.severity === 'critical' ? 'Açık engel' : 'Takip gerekli') %></span>
+            </a>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="presales-empty"><h3>Uyarı kuyruğu temiz</h3><p>Yaklaşan termin, geciken aksiyon veya kritik presales bulgusu yok.</p></div>
+      <% } %>
+    </section>
+
+    <aside class="notification-settings" aria-labelledby="notification-settings-title">
+      <div><p class="eyebrow">Bildirim düzeni</p><h2 id="notification-settings-title">Odak saatleri</h2></div>
+      <form action="/notifications/settings" method="post">
+        <input type="hidden" name="returnTo" value="/presales/attention">
+        <label class="setting-toggle">
+          <input type="checkbox" name="dailyDigest" <%= notificationPreferences.dailyDigest ? 'checked' : '' %>>
+          <span><strong>Günlük özet</strong><small>Görev ve portföy gündemini tek bildirimde topla</small></span>
+        </label>
+        <label class="field"><span>Özet saati</span><input type="number" name="digestHour" min="0" max="23" value="<%= notificationPreferences.digestHour %>"></label>
+        <label class="setting-toggle">
+          <input type="checkbox" name="includePresales" <%= notificationPreferences.includePresales ? 'checked' : '' %>>
+          <span><strong>Presales durumunu ekle</strong><small>Kritik konu ve yaklaşan terminleri özete dahil et</small></span>
+        </label>
+        <label class="setting-toggle">
+          <input type="checkbox" name="quietHoursEnabled" <%= notificationPreferences.quietHoursEnabled ? 'checked' : '' %>>
+          <span><strong>Sessiz saatler</strong><small>Uyarıları kaybetmeden çalışma saatine ertele</small></span>
+        </label>
+        <div class="quiet-hours-grid">
+          <label class="field"><span>Başlangıç</span><input type="number" name="quietStart" min="0" max="23" value="<%= notificationPreferences.quietStart %>"></label>
+          <label class="field"><span>Bitiş</span><input type="number" name="quietEnd" min="0" max="23" value="<%= notificationPreferences.quietEnd %>"></label>
+        </div>
+        <button class="primary-button" type="submit">Bildirim düzenini kaydet</button>
+      </form>
+      <% if (config.notificationsEnabled) { %>
+        <form action="/notifications/test" method="post" class="notification-settings-test">
+          <input type="hidden" name="returnTo" value="/presales/attention">
+          <button class="secondary-button" type="submit">Test bildirimi gönder</button>
+        </form>
+      <% } %>
+    </aside>
+  </div>
+</div>

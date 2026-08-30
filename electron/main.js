@@ -131,20 +131,27 @@ function secureSession() {
   });
 }
 
-async function showDesktopNotification({ title, message }) {
+async function showDesktopNotification({ title, message, route }) {
   if (!Notification.isSupported()) return false;
   const notification = new Notification({
     title,
     body: message,
     icon: path.join(app.getAppPath(), 'public', 'brand', 'gerit-mark.png'),
+    actions: [{ type: 'button', text: 'Aç' }],
   });
-  notification.on('click', showMainWindow);
+  const openTarget = () => showMainWindow(route);
+  notification.on('click', openTarget);
+  notification.on('action', openTarget);
   notification.show();
   return true;
 }
 
-function showMainWindow() {
+function showMainWindow(route) {
   if (!mainWindow) return;
+  if (route && String(route).startsWith('/') && !String(route).startsWith('//')) {
+    const target = new URL(String(route), appOrigin);
+    if (target.origin === appOrigin) mainWindow.loadURL(target.href);
+  }
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();

@@ -1,0 +1,34 @@
+<section class="presales-section qualification-section" id="qualification" aria-labelledby="qualification-title">
+  <header class="presales-section-heading">
+    <div><p class="eyebrow">Fırsat yeterliliği</p><h2 id="qualification-title">Karar hazırlığı</h2></div>
+    <div class="qualification-score <%= qualification.blockers ? 'has-blocker' : '' %>">
+      <span>Hazırlık skoru</span><strong>%<%= qualification.score %></strong>
+    </div>
+  </header>
+  <div class="qualification-summary">
+    <progress max="100" value="<%= qualification.score %>"><%= qualification.score %></progress>
+    <span><%= qualification.confirmed %>/8 doğrulandı<%= qualification.blockers ? ` · ${qualification.blockers} engel` : '' %></span>
+  </div>
+  <form action="/presales/<%= presalesCase.id %>/qualification" method="post" class="qualification-form">
+    <div class="qualification-list">
+      <% qualification.items.forEach((item) => { %>
+        <div class="qualification-row">
+          <input type="hidden" name="qualificationDimension" value="<%= item.value %>">
+          <span class="qualification-code"><%= item.short %></span>
+          <label class="qualification-copy">
+            <strong><%= item.label %></strong>
+            <small><%= item.prompt %></small>
+            <textarea name="qualificationNotes" rows="2" placeholder="Doğrulanmış bilgi, açık soru veya sonraki adım"><%= item.notes %></textarea>
+          </label>
+          <label class="qualification-status">
+            <span class="sr-only"><%= item.label %> durumu</span>
+            <select name="qualificationStatus">
+              <% qualificationStatuses.forEach((status) => { %><option value="<%= status.value %>" <%= item.status === status.value ? 'selected' : '' %>><%= status.label %></option><% }) %>
+            </select>
+          </label>
+        </div>
+      <% }) %>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit">Yeterlilik değerlendirmesini kaydet</button></div>
+  </form>
+</section>

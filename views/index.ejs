@@ -35,10 +35,15 @@
         </a>
 
         <nav class="primary-nav" aria-label="İş görünümleri">
-          <a class="nav-item presales-nav <%= currentPath.startsWith('/presales') ? 'active' : '' %>" href="/presales">
+          <a class="nav-item presales-nav <%= currentPath === '/presales' || /^\/presales\/\d/.test(currentPath) ? 'active' : '' %>" href="/presales">
             <span class="nav-icon" aria-hidden="true">◆</span>
             <span>Presales Merkezi</span>
             <% if (presalesSummary.active) { %><span class="nav-count"><%= presalesSummary.active %></span><% } %>
+          </a>
+          <a class="nav-item attention-nav <%= currentPath === '/presales/attention' ? 'active' : '' %>" href="/presales/attention">
+            <span class="nav-icon" aria-hidden="true">!</span>
+            <span>Aksiyon Merkezi</span>
+            <% if (attentionCount) { %><span class="nav-count nav-count-alert"><%= attentionCount %></span><% } %>
           </a>
           <a class="nav-item <%= currentPath === '/today' ? 'active' : '' %>" href="/today">
             <span class="nav-icon" aria-hidden="true">●</span>
@@ -99,9 +104,9 @@
         <header class="topbar">
           <a class="mobile-brand" href="/today" aria-label="Gerit ana sayfa"><span><img src="/brand/gerit-mark.png" alt=""></span> Gerit</a>
           <form class="search-form" action="/search" method="get" role="search">
-            <label class="sr-only" for="global-search">İşlerde ara</label>
+            <label class="sr-only" for="global-search">Görev ve presales dosyalarında ara</label>
             <span class="search-icon" aria-hidden="true"></span>
-            <input id="global-search" name="q" type="search" value="<%= view.searchQuery || '' %>" placeholder="İşlerde ara" autocomplete="off">
+            <input id="global-search" name="q" type="search" value="<%= view.searchQuery || '' %>" placeholder="Görev, müşteri, SKU veya model ara" autocomplete="off">
             <kbd>/</kbd>
           </form>
           <button class="appearance-trigger" id="appearance-trigger" type="button" aria-haspopup="dialog" aria-controls="appearance-dialog">
@@ -109,6 +114,11 @@
             <span class="appearance-trigger-label">Görünüm</span>
             <kbd>G</kbd>
           </button>
+          <a class="attention-trigger <%= attentionCount ? 'has-alerts' : '' %>" href="/presales/attention" title="Aksiyon ve Uyarı Merkezi">
+            <span aria-hidden="true">!</span>
+            <span>Uyarılar</span>
+            <% if (attentionCount) { %><b><%= attentionCount %></b><% } %>
+          </a>
           <div class="local-badge <%= config.notificationsEnabled ? 'notifications-on' : '' %>" title="<%= config.notificationMode === 'desktop' ? 'Yerel masaüstü bildirimleri etkin' : config.notificationsEnabled ? 'ntfy bildirimleri etkin' : 'Bildirimler için NTFY_TOPIC ayarlayın' %>">
             <span aria-hidden="true"></span> <%= config.notificationMode === 'desktop' ? 'Yerel bildirim' : config.notificationsEnabled ? 'Bildirim açık' : 'Şirket içi' %>
           </div>
@@ -129,7 +139,7 @@
               <p class="eyebrow"><%= view.kicker %></p>
               <h1><%= view.title %></h1>
             </div>
-            <% if (!['edit', 'presales-dashboard', 'presales-case'].includes(view.kind)) { %>
+            <% if (!['edit', 'presales-dashboard', 'presales-case', 'presales-attention'].includes(view.kind)) { %>
               <p class="page-hint"><kbd>N</kbd> ile ekle · <kbd>X</kbd> ile tamamla</p>
             <% } %>
           </section>
@@ -164,7 +174,7 @@
             </section>
           <% } %>
 
-          <% if (!['edit', 'message', 'presales-dashboard', 'presales-case'].includes(view.kind)) { %>
+          <% if (!['edit', 'message', 'presales-dashboard', 'presales-case', 'presales-attention'].includes(view.kind)) { %>
             <section class="quick-add-card" aria-labelledby="quick-add-title">
               <form action="/tasks" method="post" id="quick-add-form">
                 <input type="hidden" name="returnTo" value="<%= returnPath %>">
@@ -210,7 +220,9 @@
             <% } else if (view.kind === 'presales-dashboard') { %>
               <%- include('partials/presales-dashboard', { cases: view.cases }) %>
             <% } else if (view.kind === 'presales-case') { %>
-              <%- include('partials/presales-case', { presalesCase: view.presalesCase, records: view.records, metrics: view.metrics }) %>
+              <%- include('partials/presales-case', { presalesCase: view.presalesCase, records: view.records, metrics: view.metrics, qualification: view.qualification, stakeholders: view.stakeholders, actions: view.actions }) %>
+            <% } else if (view.kind === 'presales-attention') { %>
+              <%- include('partials/presales-attention', { items: view.items }) %>
             <% } else { %>
               <% const groups = view.kind === 'grouped' ? view.groups : [{ title: null, tone: 'default', tasks: view.tasks || [] }]; %>
               <% const totalTasks = groups.reduce((sum, group) => sum + group.tasks.length, 0); %>

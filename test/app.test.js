@@ -96,6 +96,10 @@ test('eski veritabanı yeni iş akışı alanlarına veri kaybetmeden taşınır
     productFamily: product.productFamily,
     proposedModel: product.proposedModel,
   })), [{ manufacturer: 'Lenovo', productFamily: 'Rack sunucu', proposedModel: 'SR650 V4' }]);
+  assert.equal(migratedPresales.opportunityType, 'tender');
+  assert.equal(migratedPresales.priority, 'normal');
+  assert.equal(migratedPresales.currency, 'TRY');
+  assert.equal(dbModule.getPresalesQualification(migratedPresales.id).items.length, 8);
 });
 
 after(() => {
@@ -298,6 +302,13 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
       proposedModel: ['ThinkSystem SR650 V4', 'Nexus 9364C'],
       competitors: 'Dell PowerEdge R770, HPE ProLiant DL380 Gen12',
       deadline: '2026-09-15T17:00',
+      internalDeadline: '2026-09-14T12:00',
+      opportunityType: 'tender',
+      priority: 'critical',
+      currency: 'USD',
+      estimatedValue: '250000',
+      estimatedCost: '210000',
+      winProbability: '60',
       nextAction: 'Üreticiden bellek popülasyon teyidi al',
     })
     .expect(302);
@@ -340,6 +351,9 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
   const records = dbModule.getPresalesRecords(caseId);
   assert.equal(presalesCase.customer, 'Örnek Kurum');
   assert.equal(presalesCase.stage, 'estimated_cost');
+  assert.equal(presalesCase.priority, 'critical');
+  assert.equal(presalesCase.estimatedValue, 250000);
+  assert.equal(presalesCase.winProbability, 60);
   assert.equal(presalesCase.products.length, 2);
   assert.deepEqual(presalesCase.products.map((product) => product.manufacturer), ['Lenovo', 'Cisco']);
   assert.equal(presalesCase.products[1].proposedModel, 'Nexus 9364C');
@@ -353,6 +367,10 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
   assert.match(page.text, /Şartlı Uygun/);
   assert.match(page.text, /Yaklaşık maliyet çalışması/);
   assert.match(page.text, /Nexus 9364C/);
+  assert.match(page.text, /250\.000/);
+  assert.match(page.text, /Karar hazırlığı/);
+  assert.match(page.text, /Paydaş haritası/);
+  assert.match(page.text, /Proje aksiyonları/);
   assert.match(page.text, /data-add-product/);
   assert.match(page.text, /4\/4 kanıt kapısı/);
   assert.match(page.text, /Kritik · 11/);
@@ -364,9 +382,12 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
 
   const exported = await request(app).get(`/presales/${caseId}/export`).expect(200);
   assert.equal(exported.body.case.id, caseId);
-  assert.equal(exported.body.schemaVersion, 2);
+  assert.equal(exported.body.schemaVersion, 3);
   assert.equal(exported.body.case.products.length, 2);
   assert.equal(exported.body.records[0].sku, 'PSU-SKU-01');
+  assert.deepEqual(exported.body.qualification.items.length, 8);
+  assert.deepEqual(exported.body.stakeholders, []);
+  assert.deepEqual(exported.body.actions, []);
 
   await request(app)
     .post(`/presales/${caseId}`)
@@ -386,6 +407,103 @@ test('presales dosyası ve kanıt kapıları yerel veritabanında saklanır', as
   assert.equal(updatedProducts[0].manufacturer, 'HPE');
 });
 
+test('presales yeterlilik, paydaş ve aksiyon planı uçtan uca izlenir', async () => {
+  const presalesCase = dbModule.addPresalesCase({
+    title: 'Kamu bulut altyapısı',
+    customer: 'Karar Kurumu',
+    tenderReference: 'SA-CONTROL-1',
+    priority: 'high',
+    currency: 'EUR',
+    estimatedValue: '800000',
+    estimatedCost: '650000',
+    winProbability: '45',
+    deadline: '2026-09-05T14:00:00.000Z',
+  });
+
+  await request(app)
+    .post(`/presales/${presalesCase.id}/qualification`)
+    .type('form')
+    .send({
+      qualificationDimension: ['metrics', 'economic_buyer', 'decision_criteria', 'decision_process', 'paper_process', 'pain', 'champion', 'competition'],
+      qualificationStatus: ['confirmed', 'partial', 'confirmed', 'partial', 'blocked', 'confirmed', 'confirmed', 'partial'],
+      qualificationNotes: ['%20 enerji tasarrufu', 'Bütçe sahibiyle toplantı bekleniyor', 'Teknik puanlama alındı', 'Demo sonrası kurul', 'Sözleşme taslağı eksik', 'Kapasite yetersizliği', 'Ayşe Hanım destekliyor', 'Rakip fiyat bekleniyor'],
+    })
+    .expect(302)
+    .expect('Location', `/presales/${presalesCase.id}#qualification`);
+
+  await request(app)
+    .post(`/presales/${presalesCase.id}/stakeholders`)
+    .type('form')
+    .send({
+      name: 'Ayşe Karar',
+      organization: 'Bilgi İşlem',
+      role: 'champion',
+      influence: 'high',
+      stance: 'supportive',
+      contact: 'ayse@example.local',
+      notes: 'Teknik değerlendirmeyi koordine ediyor',
+    })
+    .expect(302);
+
+  const actionResponse = await request(app)
+    .post(`/presales/${presalesCase.id}/actions`)
+    .type('form')
+    .send({
+      title: 'Gold review ve son BOM kontrolü',
+      owner: 'Presales',
+      status: 'in_progress',
+      priority: '1',
+      dueAt: '2026-09-02T12:00',
+      reminderAt: '2026-09-02T09:00',
+      notes: 'Fiyat, entitlement ve kablo adetlerini kilitle',
+    })
+    .expect(302);
+  assert.match(actionResponse.headers.location, new RegExp(`^/presales/${presalesCase.id}#action-\\d+$`));
+
+  const qualification = dbModule.getPresalesQualification(presalesCase.id);
+  const stakeholders = dbModule.getPresalesStakeholders(presalesCase.id);
+  const actions = dbModule.getPresalesActions(presalesCase.id);
+  assert.equal(qualification.score, 69);
+  assert.equal(qualification.blockers, 1);
+  assert.equal(stakeholders[0].role, 'champion');
+  assert.equal(actions[0].priority, 1);
+  assert.equal(actions[0].status, 'in_progress');
+
+  await request(app)
+    .post(`/presales/${presalesCase.id}/stakeholders/${stakeholders[0].id}`)
+    .type('form')
+    .send({ name: 'Ayşe Karar', organization: 'Bilgi İşlem', role: 'champion', influence: 'high', stance: 'supportive', contact: 'ayse@example.local', notes: 'Teknik ve ticari süreci koordine ediyor' })
+    .expect(302);
+  await request(app)
+    .post(`/presales/${presalesCase.id}/actions/${actions[0].id}`)
+    .type('form')
+    .send({ title: actions[0].title, owner: 'Presales', status: 'waiting', priority: '1', dueAt: '2026-09-02T12:00', reminderAt: '2026-09-02T09:00', notes: 'Distribütör fiyatı bekleniyor' })
+    .expect(302);
+  assert.equal(dbModule.getPresalesActions(presalesCase.id)[0].status, 'waiting');
+
+  const page = await request(app).get(`/presales/${presalesCase.id}`).expect(200);
+  assert.match(page.text, /Ayşe Karar/);
+  assert.match(page.text, /Gold review ve son BOM kontrolü/);
+  assert.match(page.text, /%69/);
+  assert.match(page.text, /Sözleşme taslağı eksik/);
+
+  const attention = await request(app).get('/presales/attention').expect(200);
+  assert.match(attention.text, /Aksiyon ve Uyarı Merkezi/);
+  assert.match(attention.text, /Gold review ve son BOM kontrolü/);
+  assert.match(attention.text, /Satın alma süreci/);
+
+  const search = await request(app).get('/search?q=Ayşe%20Karar').expect(200);
+  assert.match(search.text, /Kamu bulut altyapısı/);
+  const actionSearch = await request(app).get('/search?q=Gold%20review').expect(200);
+  assert.match(actionSearch.text, /Kamu bulut altyapısı/);
+
+  const exported = await request(app).get(`/presales/${presalesCase.id}/export`).expect(200);
+  assert.equal(exported.body.schemaVersion, 3);
+  assert.equal(exported.body.qualification.blockers, 1);
+  assert.equal(exported.body.stakeholders[0].name, 'Ayşe Karar');
+  assert.equal(exported.body.actions[0].title, 'Gold review ve son BOM kontrolü');
+});
+
 test('presales hatırlatması terminden sonra planlanamaz', async () => {
   const response = await request(app)
     .post('/presales')
@@ -398,6 +516,20 @@ test('presales hatırlatması terminden sonra planlanamaz', async () => {
     .expect(400);
 
   assert.match(response.text, /Dosya hatırlatması zamanı son tarihten önce olmalı/);
+});
+
+test('presales iç teslim tarihi müşteri termininden önce olmalıdır', async () => {
+  const response = await request(app)
+    .post('/presales')
+    .type('form')
+    .send({
+      title: 'Geçersiz iç termin dosyası',
+      deadline: '2026-09-10T10:00',
+      internalDeadline: '2026-09-10T11:00',
+    })
+    .expect(400);
+
+  assert.match(response.text, /İç teslim tarihi müşteri son teslim tarihinden önce olmalı/);
 });
 
 test('presales dosya hatırlatması yerel bildirim olarak yalnızca bir kez gönderilir', async () => {
@@ -425,6 +557,29 @@ test('presales dosya hatırlatması yerel bildirim olarak yalnızca bir kez gön
   assert.match(matching[0].title, /Presales hatırlatması/);
   assert.match(matching[0].message, /BOM ve lisans teyitlerini kapat/);
   assert.ok(dbModule.getPresalesCase(presalesCase.id).reminderSentAt);
+});
+
+test('presales aksiyon hatırlatması ilgili proje bağlantısıyla yalnızca bir kez gönderilir', async () => {
+  const presalesCase = dbModule.addPresalesCase({
+    title: 'Aksiyon bildirim projesi',
+    customer: 'Bildirim Kurumu',
+  });
+  const action = dbModule.addPresalesAction(presalesCase.id, {
+    title: 'Teknik uygunluk matrisini kapat',
+    status: 'open',
+    priority: 1,
+    dueAt: '2026-08-31T12:00:00.000Z',
+    reminderAt: '2026-08-31T09:00:00.000Z',
+  });
+  const payloads = [];
+
+  await reminders.checkDueTasks(new Date('2026-08-31T09:00:00.000Z'), async (payload) => payloads.push(payload));
+  await reminders.checkDueTasks(new Date('2026-08-31T09:01:00.000Z'), async (payload) => payloads.push(payload));
+
+  const matching = payloads.filter((payload) => payload.message.includes(action.title));
+  assert.equal(matching.length, 1);
+  assert.equal(matching[0].route, `/presales/${presalesCase.id}#action-${action.id}`);
+  assert.ok(dbModule.getPresalesAction(action.id).reminderSentAt);
 });
 
 test('due reminders are sent once and then marked', async () => {
@@ -530,6 +685,49 @@ test('günlük özet bildirimi aynı gün yalnızca bir kez gönderilir', async 
   assert.equal(payloads.length, 1);
   assert.match(payloads[0].title, /Gerit/);
   assert.match(payloads[0].message, /Günlük özet kontrolü/);
+  assert.match(payloads[0].message, /Presales:/);
+  assert.equal(payloads[0].route, '/presales/attention');
+});
+
+test('bildirim düzeni yerelde saklanır ve sessiz saatler doğru hesaplanır', async () => {
+  await request(app)
+    .post('/notifications/settings')
+    .type('form')
+    .send({
+      returnTo: '/presales/attention',
+      dailyDigest: 'on',
+      digestHour: '9',
+      includePresales: 'on',
+      quietHoursEnabled: 'on',
+      quietStart: '22',
+      quietEnd: '7',
+    })
+    .expect(302)
+    .expect('Location', '/presales/attention');
+
+  assert.deepEqual(dbModule.getNotificationPreferences(), {
+    dailyDigest: true,
+    digestHour: 9,
+    includePresales: true,
+    quietHoursEnabled: true,
+    quietStart: 22,
+    quietEnd: 7,
+  });
+  assert.equal(reminders.isQuietHour(new Date('2026-08-30T20:30:00.000Z'), dbModule.getNotificationPreferences()), true);
+  assert.equal(reminders.isQuietHour(new Date('2026-08-30T08:00:00.000Z'), dbModule.getNotificationPreferences()), false);
+
+  const page = await request(app).get('/presales/attention').expect(200);
+  assert.match(page.text, /name="quietHoursEnabled" checked/);
+  assert.match(page.text, /name="digestHour" min="0" max="23" value="9"/);
+
+  dbModule.saveNotificationPreferences({
+    dailyDigest: true,
+    digestHour: 7,
+    includePresales: true,
+    quietHoursEnabled: false,
+    quietStart: 22,
+    quietEnd: 7,
+  });
 });
 
 test('bildirim deneme aksiyonu yapılandırılmış yayıncıya gönderir', async () => {

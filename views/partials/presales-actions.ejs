@@ -1,0 +1,51 @@
+<section class="presales-section action-plan-section" id="actions" aria-labelledby="actions-title">
+  <header class="presales-section-heading">
+    <div><p class="eyebrow">İç teslim planı</p><h2 id="actions-title">Proje aksiyonları</h2></div>
+    <div class="action-plan-progress"><strong>%<%= metrics.actions.percent %></strong><span><%= metrics.actions.done %>/<%= metrics.actions.total %> tamamlandı</span></div>
+  </header>
+
+  <% if (actions.length) { %>
+    <div class="presales-action-list">
+      <% actions.forEach((action) => { %>
+        <details class="presales-action-row <%= action.dueMeta.overdue && action.status !== 'done' ? 'is-overdue' : '' %>" id="action-<%= action.id %>">
+          <summary>
+            <span class="action-state action-state-<%= action.status %>" aria-hidden="true"><%= action.status === 'done' ? '✓' : action.priority %></span>
+            <span class="action-copy"><strong><%= action.title %></strong><small><%= [action.owner || 'Sorumlu bekleniyor', action.dueMeta.label].filter(Boolean).join(' · ') %></small></span>
+            <span class="status-chip status-<%= action.statusMeta.tone %>"><%= action.statusMeta.label %></span>
+          </summary>
+          <form action="/presales/<%= presalesCase.id %>/actions/<%= action.id %>" method="post" class="presales-form compact-form">
+            <div class="presales-form-grid action-form-grid">
+              <label class="field field-wide"><span>Aksiyon</span><input name="title" required value="<%= action.title %>"></label>
+              <label class="field"><span>Sorumlu</span><input name="owner" value="<%= action.owner %>"></label>
+              <label class="field"><span>Durum</span><select name="status"><% presalesActionStatuses.forEach((status) => { %><option value="<%= status.value %>" <%= action.status === status.value ? 'selected' : '' %>><%= status.label %></option><% }) %></select></label>
+              <label class="field"><span>Öncelik</span><select name="priority"><option value="1" <%= action.priority === 1 ? 'selected' : '' %>>Kritik</option><option value="2" <%= action.priority === 2 ? 'selected' : '' %>>Yüksek</option><option value="3" <%= action.priority === 3 ? 'selected' : '' %>>Normal</option></select></label>
+              <label class="field"><span>İç termin</span><input name="dueAt" type="datetime-local" value="<%= toDateTimeInput(action.dueAt) %>"></label>
+              <label class="field"><span>Hatırlatma</span><input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(action.reminderAt) %>"></label>
+              <label class="field field-wide"><span>Not</span><textarea name="notes" rows="2"><%= action.notes %></textarea></label>
+            </div>
+            <div class="form-actions"><button class="primary-button" type="submit">Aksiyonu güncelle</button></div>
+          </form>
+          <form action="/presales/<%= presalesCase.id %>/actions/<%= action.id %>/delete" method="post" class="delete-form inline-delete" data-confirm="Bu aksiyon silinsin mi?"><button type="submit">Sil</button></form>
+        </details>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="presales-empty compact-empty"><h3>İç teslim planı boş</h3><p>Şartname inceleme, üretici teyidi, BOM kontrolü, fiyat ve son kalite kontrol adımlarını ekle.</p></div>
+  <% } %>
+
+  <details class="inline-create" open>
+    <summary>+ Proje aksiyonu ekle</summary>
+    <form action="/presales/<%= presalesCase.id %>/actions" method="post" class="presales-form compact-form">
+      <div class="presales-form-grid action-form-grid">
+        <label class="field field-wide"><span>Aksiyon</span><input name="title" required placeholder="Üreticiden son kitlist ve entitlement teyidini al"></label>
+        <label class="field"><span>Sorumlu</span><input name="owner" placeholder="Kişi veya ekip"></label>
+        <label class="field"><span>Durum</span><select name="status"><% presalesActionStatuses.forEach((status) => { %><option value="<%= status.value %>"><%= status.label %></option><% }) %></select></label>
+        <label class="field"><span>Öncelik</span><select name="priority"><option value="1">Kritik</option><option value="2" selected>Yüksek</option><option value="3">Normal</option></select></label>
+        <label class="field"><span>İç termin</span><input name="dueAt" type="datetime-local"></label>
+        <label class="field"><span>Hatırlatma</span><input name="reminderAt" type="datetime-local"></label>
+        <label class="field field-wide"><span>Not</span><textarea name="notes" rows="2"></textarea></label>
+      </div>
+      <div class="form-actions"><button class="primary-button" type="submit">Aksiyonu ekle</button></div>
+    </form>
+  </details>
+</section>

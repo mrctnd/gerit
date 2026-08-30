@@ -25,7 +25,21 @@
       <strong><%= presalesSummary.criticalRisks %></strong>
       <small><%= presalesSummary.clarification %> teyit bekliyor</small>
     </article>
+    <article class="<%= presalesSummary.overdueActions ? 'summary-danger' : '' %>">
+      <span>Geciken aksiyon</span>
+      <strong><%= presalesSummary.overdueActions %></strong>
+      <small><%= presalesSummary.openActions %> açık iç teslim işi</small>
+    </article>
   </section>
+
+  <% if (presalesSummary.pipeline.length) { %>
+    <section class="pipeline-strip" aria-label="Ağırlıklı fırsat havuzu">
+      <div><span>Ağırlıklı pipeline</span><small>Teklif bedeli × kazanma olasılığı</small></div>
+      <% presalesSummary.pipeline.forEach((pipeline) => { %>
+        <dl><div><dt><%= pipeline.currency %> toplam</dt><dd><%= formatMoney(pipeline.total, pipeline.currency) %></dd></div><div><dt>Ağırlıklı</dt><dd><%= formatMoney(pipeline.weighted, pipeline.currency) %></dd></div></dl>
+      <% }) %>
+    </section>
+  <% } %>
 
   <section class="presales-section" aria-labelledby="active-cases-title">
     <div class="presales-section-heading">
@@ -33,13 +47,16 @@
         <p class="eyebrow">Portföy</p>
         <h2 id="active-cases-title">Presales dosyaları</h2>
       </div>
-      <a class="primary-button" href="#new-presales-case">Yeni dosya</a>
+      <div class="portfolio-tools">
+        <label><span class="sr-only">Portföyde filtrele</span><input type="search" data-case-filter placeholder="Müşteri, proje veya model filtrele"></label>
+        <a class="primary-button" href="#new-presales-case">Yeni dosya</a>
+      </div>
     </div>
 
     <% if (cases.length) { %>
       <div class="presales-case-list">
         <% cases.forEach((presalesCase) => { %>
-          <a class="presales-case-row <%= presalesCase.deadlineMeta.overdue && !['won', 'lost'].includes(presalesCase.stage) ? 'is-overdue' : '' %>" href="/presales/<%= presalesCase.id %>">
+          <a class="presales-case-row <%= presalesCase.deadlineMeta.overdue && !['won', 'lost'].includes(presalesCase.stage) ? 'is-overdue' : '' %>" href="/presales/<%= presalesCase.id %>" data-case-row data-case-search="<%= [presalesCase.title, presalesCase.customer, presalesCase.tenderReference, ...presalesCase.products.flatMap((product) => [product.manufacturer, product.productFamily, product.proposedModel])].join(' ').toLocaleLowerCase('tr-TR') %>">
             <span class="presales-case-main">
               <strong><%= presalesCase.title %></strong>
               <small><%= [presalesCase.customer, presalesCase.tenderReference].filter(Boolean).join(' · ') || 'Müşteri ve referans bekleniyor' %></small>
@@ -52,9 +69,9 @@
               </span>
             </span>
             <span class="presales-case-health">
-              <span class="status-chip status-<%= presalesCase.stageMeta.tone %>"><%= presalesCase.stageMeta.label %></span>
-              <span class="status-chip status-<%= presalesCase.offerabilityMeta.tone %>"><%= presalesCase.offerabilityMeta.label %></span>
-              <small><%= presalesCase.recordCount %> kayıt · <%= presalesCase.issueCount %> açık bulgu</small>
+              <span><span class="status-chip status-<%= presalesCase.stageMeta.tone %>"><%= presalesCase.stageMeta.label %></span><span class="status-chip status-<%= presalesCase.priorityMeta.tone %>"><%= presalesCase.priorityMeta.label %></span></span>
+              <strong><%= presalesCase.estimatedValue !== null ? formatMoney(presalesCase.estimatedValue, presalesCase.currency) : `%${presalesCase.qualificationScore} hazırlık` %></strong>
+              <small>%<%= presalesCase.qualificationScore %> yeterlilik · <%= presalesCase.openActionCount %> aksiyon · <%= presalesCase.issueCount %> bulgu</small>
             </span>
           </a>
         <% }) %>
@@ -94,6 +111,8 @@
             <% presalesStages.forEach((stage) => { %><option value="<%= stage.value %>"><%= stage.label %></option><% }) %>
           </select>
         </label>
+        <label class="field"><span>Fırsat türü</span><select name="opportunityType"><% opportunityTypes.forEach((type) => { %><option value="<%= type.value %>"><%= type.label %></option><% }) %></select></label>
+        <label class="field"><span>Öncelik</span><select name="priority"><% presalesPriorities.forEach((priority) => { %><option value="<%= priority.value %>"><%= priority.label %></option><% }) %></select></label>
         <label class="field">
           <span>Teklif kararı</span>
           <select name="offerability">
@@ -109,11 +128,16 @@
           <span>Son teslim tarihi</span>
           <input name="deadline" type="datetime-local">
         </label>
+        <label class="field"><span>İç teslim tarihi</span><input name="internalDeadline" type="datetime-local"><small>Müşteri termininden önceki iç kalite kapısı</small></label>
         <label class="field">
           <span>Dosya hatırlatması</span>
           <input name="reminderAt" type="datetime-local">
           <small>Son teslim tarihinden önce olmalı</small>
         </label>
+        <label class="field"><span>Para birimi</span><select name="currency"><% currencies.forEach((currency) => { %><option value="<%= currency.value %>"><%= currency.label %></option><% }) %></select></label>
+        <label class="field"><span>Tahmini teklif bedeli</span><input name="estimatedValue" type="number" min="0" step="0.01"></label>
+        <label class="field"><span>Yaklaşık maliyet</span><input name="estimatedCost" type="number" min="0" step="0.01"></label>
+        <label class="field"><span>Kazanma olasılığı</span><input name="winProbability" type="number" min="0" max="100" step="5" value="0"></label>
         <label class="field field-wide">
           <span>Rakipler / alternatifler</span>
           <input name="competitors" placeholder="Rakip marka ve modeller; segment farklarını ayrıca kaydet">

@@ -4,14 +4,24 @@
     <a class="secondary-button" href="/presales/<%= presalesCase.id %>/export" download>JSON dışa aktar</a>
   </nav>
 
-  <section class="presales-case-hero" aria-label="Dosya durumu">
+  <nav class="case-section-nav" aria-label="Dosya bölümleri">
+    <a href="#overview">Genel bakış</a>
+    <a href="#qualification">Yeterlilik</a>
+    <a href="#stakeholders">Paydaşlar</a>
+    <a href="#actions">Aksiyonlar</a>
+    <a href="#analysis">Analiz kayıtları</a>
+  </nav>
+
+  <section class="presales-case-hero" id="overview" aria-label="Dosya durumu">
     <div>
       <span class="status-chip status-<%= presalesCase.stageMeta.tone %>"><%= presalesCase.stageMeta.label %></span>
       <span class="status-chip status-<%= presalesCase.offerabilityMeta.tone %>"><%= presalesCase.offerabilityMeta.label %></span>
+      <span class="status-chip status-<%= presalesCase.priorityMeta.tone %>"><%= presalesCase.priorityMeta.label %> öncelik</span>
     </div>
     <dl>
       <div><dt>Müşteri</dt><dd><%= presalesCase.customer || 'Belirtilmedi' %></dd></div>
       <div><dt>Referans</dt><dd><%= presalesCase.tenderReference || 'Belirtilmedi' %></dd></div>
+      <div><dt>Fırsat türü</dt><dd><%= presalesCase.opportunityTypeMeta.label %></dd></div>
       <div>
         <dt>Teklif ürünleri</dt>
         <dd class="presales-product-summary">
@@ -23,14 +33,19 @@
         </dd>
       </div>
       <div><dt>Son tarih</dt><dd class="<%= presalesCase.deadlineMeta.overdue ? 'text-danger' : '' %>"><%= presalesCase.deadlineMeta.label || 'Tarih verilmedi' %></dd></div>
+      <div><dt>İç termin</dt><dd class="<%= presalesCase.internalDeadlineMeta.overdue ? 'text-danger' : '' %>"><%= presalesCase.internalDeadlineMeta.label || 'Tarih verilmedi' %></dd></div>
+      <div><dt>Teklif bedeli</dt><dd><%= presalesCase.estimatedValue !== null ? formatMoney(presalesCase.estimatedValue, presalesCase.currency) : 'Belirtilmedi' %></dd></div>
+      <div><dt>Kazanma olasılığı</dt><dd>%<%= presalesCase.winProbability %> · <%= formatMoney(presalesCase.weightedValue, presalesCase.currency) %> ağırlıklı</dd></div>
+      <div><dt>Tahmini maliyet / marj</dt><dd><%= presalesCase.estimatedCost !== null ? formatMoney(presalesCase.estimatedCost, presalesCase.currency) : 'Belirtilmedi' %><%= presalesCase.grossMarginPercent !== null ? ` · %${presalesCase.grossMarginPercent}` : '' %></dd></div>
     </dl>
     <% if (presalesCase.nextAction) { %><p><strong>Sonraki aksiyon:</strong> <%= presalesCase.nextAction %></p><% } %>
   </section>
 
   <section class="presales-metrics" aria-label="Dosya analiz özeti">
-    <article><span>Toplam kayıt</span><strong><%= metrics.total %></strong><small>tüm çalışma türleri</small></article>
-    <article><span>Değerlendirilen</span><strong><%= metrics.assessed %></strong><small>kapsam dışı hariç</small></article>
-    <article class="summary-success"><span>Uygun / tamam</span><strong><%= metrics.compliant %></strong><small>kanıtlanan kayıt</small></article>
+    <article><span>Yeterlilik</span><strong>%<%= metrics.qualification.score %></strong><small><%= metrics.qualification.confirmed %>/8 doğrulandı</small></article>
+    <article><span>Kanıt kapsamı</span><strong>%<%= metrics.evidencePercent %></strong><small>4 bağımsız kanıt kapısı</small></article>
+    <article class="<%= metrics.actions.open ? 'summary-active' : 'summary-success' %>"><span>Aksiyon planı</span><strong>%<%= metrics.actions.percent %></strong><small><%= metrics.actions.open %> açık aksiyon</small></article>
+    <article><span>Paydaşlar</span><strong><%= metrics.stakeholderCount %></strong><small>karar ağı kişisi</small></article>
     <article class="<%= metrics.counts.noncompliant ? 'summary-danger' : '' %>"><span>Uygunsuz</span><strong><%= metrics.counts.noncompliant || 0 %></strong><small>değişiklik gerekli</small></article>
     <article class="<%= metrics.counts.clarification ? 'summary-active' : '' %>"><span>Teyit</span><strong><%= metrics.counts.clarification || 0 %></strong><small>netleştirme bekliyor</small></article>
   </section>
@@ -45,6 +60,8 @@
         <label class="field field-wide"><span>Dosya / proje adı</span><input name="title" value="<%= presalesCase.title %>" required></label>
         <label class="field"><span>Müşteri / kurum</span><input name="customer" value="<%= presalesCase.customer %>"></label>
         <label class="field"><span>İhale / fırsat referansı</span><input name="tenderReference" value="<%= presalesCase.tenderReference %>"></label>
+        <label class="field"><span>Fırsat türü</span><select name="opportunityType"><% opportunityTypes.forEach((type) => { %><option value="<%= type.value %>" <%= presalesCase.opportunityType === type.value ? 'selected' : '' %>><%= type.label %></option><% }) %></select></label>
+        <label class="field"><span>Öncelik</span><select name="priority"><% presalesPriorities.forEach((priority) => { %><option value="<%= priority.value %>" <%= presalesCase.priority === priority.value ? 'selected' : '' %>><%= priority.label %></option><% }) %></select></label>
         <label class="field">
           <span>Mevcut aşama</span>
           <select name="stage"><% presalesStages.forEach((stage) => { %><option value="<%= stage.value %>" <%= presalesCase.stage === stage.value ? 'selected' : '' %>><%= stage.label %></option><% }) %></select>
@@ -56,7 +73,12 @@
         <%- include('presales-product-list', { products: presalesCase.products }) %>
         <label class="field"><span>Sorumlu</span><input name="owner" value="<%= presalesCase.owner %>"></label>
         <label class="field"><span>Son teslim tarihi</span><input name="deadline" type="datetime-local" value="<%= toDateTimeInput(presalesCase.deadline) %>"></label>
+        <label class="field"><span>İç teslim tarihi</span><input name="internalDeadline" type="datetime-local" value="<%= toDateTimeInput(presalesCase.internalDeadline) %>"><small>Müşteri termininden önceki iç kalite kapısı</small></label>
         <label class="field"><span>Dosya hatırlatması</span><input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(presalesCase.reminderAt) %>"><small>Son teslim tarihinden önce olmalı</small></label>
+        <label class="field"><span>Para birimi</span><select name="currency"><% currencies.forEach((currency) => { %><option value="<%= currency.value %>" <%= presalesCase.currency === currency.value ? 'selected' : '' %>><%= currency.label %></option><% }) %></select></label>
+        <label class="field"><span>Tahmini teklif bedeli</span><input name="estimatedValue" type="number" min="0" step="0.01" value="<%= presalesCase.estimatedValue ?? '' %>"></label>
+        <label class="field"><span>Yaklaşık maliyet</span><input name="estimatedCost" type="number" min="0" step="0.01" value="<%= presalesCase.estimatedCost ?? '' %>"></label>
+        <label class="field"><span>Kazanma olasılığı</span><input name="winProbability" type="number" min="0" max="100" step="5" value="<%= presalesCase.winProbability %>"></label>
         <label class="field field-wide"><span>Rakipler / alternatifler</span><input name="competitors" value="<%= presalesCase.competitors %>"></label>
         <label class="field field-wide"><span>Sonraki aksiyon</span><input name="nextAction" value="<%= presalesCase.nextAction %>"></label>
         <label class="field field-wide"><span>Dosya notları</span><textarea name="notes" rows="4"><%= presalesCase.notes %></textarea></label>
@@ -65,7 +87,14 @@
     </form>
   </details>
 
-  <section class="presales-section" aria-labelledby="workstreams-title">
+  <div class="presales-control-grid">
+    <%- include('presales-qualification', { presalesCase, qualification }) %>
+    <%- include('presales-stakeholders', { presalesCase, stakeholders }) %>
+  </div>
+
+  <%- include('presales-actions', { presalesCase, actions, metrics }) %>
+
+  <section class="presales-section" id="analysis" aria-labelledby="workstreams-title">
     <div class="presales-section-heading">
       <div><p class="eyebrow">Çalışma defteri</p><h2 id="workstreams-title">Analiz ve teklif kayıtları</h2></div>
       <a class="primary-button" href="#new-presales-record">Yeni kayıt</a>

@@ -4,7 +4,9 @@ import { appRoot, config } from './config.js';
 import {
   getAppearancePreferences,
   addPresalesCase,
+  addPresalesAction,
   addPresalesRecord,
+  addPresalesStakeholder,
   addTaskNote,
   addTask,
   completeTask,
@@ -16,12 +18,17 @@ import {
   getProjectTasks,
   getProjects,
   getPresalesCase,
+  getPresalesActions,
+  getPresalesAttentionItems,
   getPresalesCaseMetrics,
   getPresalesCases,
   getPresalesDashboardSummary,
   getPresalesExport,
   getPresalesRecord,
   getPresalesRecords,
+  getPresalesQualification,
+  getPresalesStakeholders,
+  getNotificationPreferences,
   getTask,
   getTodayTasks,
   getUpcomingTasks,
@@ -33,10 +40,16 @@ import {
   searchPresales,
   searchTasks,
   saveAppearancePreferences,
+  saveNotificationPreferences,
+  savePresalesQualification,
+  deletePresalesAction,
   deletePresalesCase,
   deletePresalesRecord,
+  deletePresalesStakeholder,
+  updatePresalesAction,
   updatePresalesCase,
   updatePresalesRecord,
+  updatePresalesStakeholder,
   updateTask,
 } from './db.js';
 import {
@@ -56,15 +69,30 @@ import { publishNotification } from './reminders.js';
 import {
   COMPLIANCE_STATUSES,
   CONFIDENCE_LEVELS,
+  CURRENCIES,
   OFFERABILITY_STATUSES,
+  OPPORTUNITY_TYPES,
+  PRESALES_ACTION_STATUSES,
+  PRESALES_PRIORITIES,
   PRESALES_RECORD_TYPES,
   PRESALES_STAGES,
+  QUALIFICATION_DIMENSIONS,
+  QUALIFICATION_STATUSES,
   RESPONSE_MODES,
+  STAKEHOLDER_INFLUENCE,
+  STAKEHOLDER_ROLES,
+  STAKEHOLDER_STANCES,
   complianceStatusMeta,
   offerabilityMeta,
+  opportunityTypeMeta,
+  presalesActionStatusMeta,
+  presalesPriorityMeta,
   presalesRecordTypeMeta,
   presalesStageMeta,
+  qualificationStatusMeta,
   riskMeta,
+  stakeholderRoleMeta,
+  stakeholderStanceMeta,
 } from './presales.js';
 import { TASK_STATUSES, normalizeProgress, taskStatusMeta } from './workflow.js';
 
@@ -113,6 +141,11 @@ export function createApp({ notificationPublisher } = {}) {
       reference.toUTC().toISO(),
       reference.plus({ days: 7 }).toUTC().toISO(),
     );
+    res.locals.attentionItems = getPresalesAttentionItems(
+      reference.toUTC().toISO(),
+      reference.plus({ days: 7 }).toUTC().toISO(),
+    );
+    res.locals.attentionCount = res.locals.attentionItems.length;
     res.locals.currentPath = req.path;
     res.locals.returnPath = req.originalUrl;
     res.locals.appearancePreferences = getAppearancePreferences();
@@ -125,6 +158,16 @@ export function createApp({ notificationPublisher } = {}) {
     res.locals.presalesStages = PRESALES_STAGES;
     res.locals.offerabilityStatuses = OFFERABILITY_STATUSES;
     res.locals.presalesRecordTypes = PRESALES_RECORD_TYPES;
+    res.locals.opportunityTypes = OPPORTUNITY_TYPES;
+    res.locals.presalesPriorities = PRESALES_PRIORITIES;
+    res.locals.currencies = CURRENCIES;
+    res.locals.qualificationDimensions = QUALIFICATION_DIMENSIONS;
+    res.locals.qualificationStatuses = QUALIFICATION_STATUSES;
+    res.locals.stakeholderRoles = STAKEHOLDER_ROLES;
+    res.locals.stakeholderInfluence = STAKEHOLDER_INFLUENCE;
+    res.locals.stakeholderStances = STAKEHOLDER_STANCES;
+    res.locals.presalesActionStatuses = PRESALES_ACTION_STATUSES;
+    res.locals.notificationPreferences = getNotificationPreferences();
     res.locals.complianceStatuses = COMPLIANCE_STATUSES;
     res.locals.confidenceLevels = CONFIDENCE_LEVELS;
     res.locals.responseModes = RESPONSE_MODES;
@@ -132,6 +175,7 @@ export function createApp({ notificationPublisher } = {}) {
     res.locals.encodeURIComponent = encodeURIComponent;
     res.locals.toDateTimeInput = toDateTimeInput;
     res.locals.describeRecurrence = describeRecurrence;
+    res.locals.formatMoney = formatMoney;
     next();
   });
 
@@ -165,6 +209,31 @@ export function createApp({ notificationPublisher } = {}) {
     }
   });
 
+  app.post('/notifications/settings', (req, res, next) => {
+    try {
+      saveNotificationPreferences({
+        dailyDigest: req.body.dailyDigest === 'on',
+        digestHour: req.body.digestHour,
+        includePresales: req.body.includePresales === 'on',
+        quietHoursEnabled: req.body.quietHoursEnabled === 'on',
+        quietStart: req.body.quietStart,
+        quietEnd: req.body.quietEnd,
+      });
+      res.redirect(safeReturnTo(req.body.returnTo, '/presales/attention'));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/presales/attention', (_req, res) => {
+    renderPage(res, {
+      title: 'Aksiyon ve Uyarı Merkezi',
+      kicker: 'Termin, risk, teyit ve sorumluluk kuyruğu',
+      kind: 'presales-attention',
+      items: res.locals.attentionItems.map(decorateAttentionItem),
+    });
+  });
+
   app.get('/presales', (_req, res) => {
     renderPage(res, {
       title: 'Presales Merkezi',
@@ -178,6 +247,7 @@ export function createApp({ notificationPublisher } = {}) {
     try {
       const payload = presalesCasePayload(req.body);
       validateReminder(payload.reminderAt, payload.deadline, 'Dosya hatırlatması');
+      validateInternalDeadline(payload.internalDeadline, payload.deadline);
       const presalesCase = addPresalesCase(payload);
       res.redirect(`/presales/${presalesCase.id}`);
     } catch (error) {
@@ -203,6 +273,9 @@ export function createApp({ notificationPublisher } = {}) {
       presalesCase: decoratePresalesCase(presalesCase),
       records: getPresalesRecords(presalesCase.id).map(decoratePresalesRecord),
       metrics: getPresalesCaseMetrics(presalesCase.id),
+      qualification: decorateQualification(getPresalesQualification(presalesCase.id)),
+      stakeholders: getPresalesStakeholders(presalesCase.id).map(decorateStakeholder),
+      actions: getPresalesActions(presalesCase.id).map(decoratePresalesAction),
     });
   });
 
@@ -211,6 +284,7 @@ export function createApp({ notificationPublisher } = {}) {
       const id = Number(req.params.id);
       const payload = presalesCasePayload(req.body);
       validateReminder(payload.reminderAt, payload.deadline, 'Dosya hatırlatması');
+      validateInternalDeadline(payload.internalDeadline, payload.deadline);
       const updated = updatePresalesCase(id, payload);
       if (!updated) return next();
       res.redirect(`/presales/${id}`);
@@ -223,6 +297,85 @@ export function createApp({ notificationPublisher } = {}) {
     try {
       deletePresalesCase(Number(req.params.id));
       res.redirect('/presales');
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:id/qualification', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.id);
+      const updated = savePresalesQualification(caseId, qualificationPayload(req.body));
+      if (!updated) return next();
+      res.redirect(`/presales/${caseId}#qualification`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:id/stakeholders', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.id);
+      const stakeholder = addPresalesStakeholder(caseId, stakeholderPayload(req.body));
+      if (!stakeholder) return next();
+      res.redirect(`/presales/${caseId}#stakeholders`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:caseId/stakeholders/:stakeholderId', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.caseId);
+      if (!getPresalesCase(caseId)) return next();
+      updatePresalesStakeholder(caseId, Number(req.params.stakeholderId), stakeholderPayload(req.body));
+      res.redirect(`/presales/${caseId}#stakeholders`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:caseId/stakeholders/:stakeholderId/delete', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.caseId);
+      deletePresalesStakeholder(caseId, Number(req.params.stakeholderId));
+      res.redirect(`/presales/${caseId}#stakeholders`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:id/actions', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.id);
+      const payload = presalesActionPayload(req.body);
+      validateReminder(payload.reminderAt, payload.dueAt, 'Aksiyon hatırlatması');
+      const action = addPresalesAction(caseId, payload);
+      if (!action) return next();
+      res.redirect(`/presales/${caseId}#action-${action.id}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:caseId/actions/:actionId', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.caseId);
+      const payload = presalesActionPayload(req.body);
+      validateReminder(payload.reminderAt, payload.dueAt, 'Aksiyon hatırlatması');
+      const action = updatePresalesAction(caseId, Number(req.params.actionId), payload);
+      if (!action || action.caseId !== caseId) return next();
+      res.redirect(`/presales/${caseId}#action-${action.id}`);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/presales/:caseId/actions/:actionId/delete', (req, res, next) => {
+    try {
+      const caseId = Number(req.params.caseId);
+      deletePresalesAction(caseId, Number(req.params.actionId));
+      res.redirect(`/presales/${caseId}#actions`);
     } catch (error) {
       next(error);
     }
@@ -514,6 +667,7 @@ export function createApp({ notificationPublisher } = {}) {
     const badRequest = message.includes('gerekli')
       || message.includes('RRULE')
       || message.toLocaleLowerCase('tr-TR').includes('hatırlatma')
+      || message.includes('önce olmalı')
       || message.includes('Bildirim');
     if (!badRequest) console.error(error);
     res.status(badRequest ? 400 : 500);
@@ -546,12 +700,22 @@ function decorateTask(task) {
 }
 
 function decoratePresalesCase(presalesCase) {
+  const estimatedValue = Number(presalesCase.estimatedValue) || 0;
+  const estimatedCost = Number(presalesCase.estimatedCost) || 0;
   return {
     ...presalesCase,
     deadlineMeta: dueMeta(presalesCase.deadline),
     reminderMeta: dueMeta(presalesCase.reminderAt),
     stageMeta: presalesStageMeta(presalesCase.stage),
     offerabilityMeta: offerabilityMeta(presalesCase.offerability),
+    priorityMeta: presalesPriorityMeta(presalesCase.priority),
+    opportunityTypeMeta: opportunityTypeMeta(presalesCase.opportunityType),
+    internalDeadlineMeta: dueMeta(presalesCase.internalDeadline),
+    weightedValue: estimatedValue * (presalesCase.winProbability || 0) / 100,
+    grossMargin: estimatedValue && estimatedCost ? estimatedValue - estimatedCost : null,
+    grossMarginPercent: estimatedValue && estimatedCost
+      ? Math.round(((estimatedValue - estimatedCost) / estimatedValue) * 1000) / 10
+      : null,
   };
 }
 
@@ -563,6 +727,49 @@ function decoratePresalesRecord(record) {
     risk: riskMeta(record.riskProbability, record.riskImpact, record.evidenceGap),
     dueMeta: dueMeta(record.dueAt),
     reminderMeta: dueMeta(record.reminderAt),
+  };
+}
+
+function decorateQualification(qualification) {
+  return {
+    ...qualification,
+    items: qualification.items.map((item) => ({
+      ...item,
+      statusMeta: qualificationStatusMeta(item.status),
+    })),
+  };
+}
+
+function decorateStakeholder(stakeholder) {
+  return {
+    ...stakeholder,
+    roleMeta: stakeholderRoleMeta(stakeholder.role),
+    stanceMeta: stakeholderStanceMeta(stakeholder.stance),
+  };
+}
+
+function decoratePresalesAction(action) {
+  return {
+    ...action,
+    statusMeta: presalesActionStatusMeta(action.status),
+    dueMeta: dueMeta(action.dueAt),
+    reminderMeta: dueMeta(action.reminderAt),
+  };
+}
+
+function decorateAttentionItem(item) {
+  const typeLabels = {
+    deadline: 'Müşteri termini',
+    action: 'Proje aksiyonu',
+    finding: 'Teknik / ticari bulgu',
+    qualification: 'Yeterlilik engeli',
+  };
+  const dimension = QUALIFICATION_DIMENSIONS.find((entry) => entry.value === item.title);
+  return {
+    ...item,
+    title: dimension?.label || item.title,
+    typeLabel: typeLabels[item.type] || 'Uyarı',
+    dueMeta: dueMeta(item.dueAt),
   };
 }
 
@@ -578,6 +785,13 @@ function presalesCasePayload(body) {
     competitors: body.competitors,
     deadline: toUtcIso(body.deadline),
     reminderAt: toUtcIso(body.reminderAt),
+    opportunityType: body.opportunityType,
+    priority: body.priority,
+    currency: body.currency,
+    estimatedValue: body.estimatedValue,
+    estimatedCost: body.estimatedCost,
+    winProbability: body.winProbability,
+    internalDeadline: toUtcIso(body.internalDeadline),
     nextAction: body.nextAction,
     notes: body.notes,
   };
@@ -598,6 +812,41 @@ function presalesProductsPayload(body) {
 function formValues(value) {
   if (Array.isArray(value)) return value;
   return value === undefined ? [] : [value];
+}
+
+function qualificationPayload(body) {
+  const dimensions = formValues(body.qualificationDimension);
+  const statuses = formValues(body.qualificationStatus);
+  const notes = formValues(body.qualificationNotes);
+  return dimensions.map((dimension, index) => ({
+    dimension,
+    status: statuses[index],
+    notes: notes[index],
+  }));
+}
+
+function stakeholderPayload(body) {
+  return {
+    name: body.name,
+    organization: body.organization,
+    role: body.role,
+    influence: body.influence,
+    stance: body.stance,
+    contact: body.contact,
+    notes: body.notes,
+  };
+}
+
+function presalesActionPayload(body) {
+  return {
+    title: body.title,
+    owner: body.owner,
+    status: body.status,
+    priority: body.priority,
+    dueAt: toUtcIso(body.dueAt),
+    reminderAt: toUtcIso(body.reminderAt),
+    notes: body.notes,
+  };
 }
 
 function presalesRecordPayload(body) {
@@ -648,6 +897,12 @@ function validateReminder(reminderAt, dueAt, label = 'Hatırlatma') {
   }
 }
 
+function validateInternalDeadline(internalDeadline, customerDeadline) {
+  if (internalDeadline && customerDeadline && internalDeadline >= customerDeadline) {
+    throw new Error('İç teslim tarihi müşteri son teslim tarihinden önce olmalı.');
+  }
+}
+
 function fileSlug(value) {
   return String(value || '')
     .toLocaleLowerCase('tr-TR')
@@ -657,4 +912,14 @@ function fileSlug(value) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 60);
+}
+
+function formatMoney(value, currency = 'TRY') {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '—';
+  return new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }

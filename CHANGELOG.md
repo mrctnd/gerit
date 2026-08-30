@@ -4,6 +4,27 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ## [Yayımlanmadı]
 
+## [0.3.0] - 2026-08-30
+
+### Eklendi
+
+- Para birimi bazında tahmini teklif bedeli, yaklaşık maliyet, marj, kazanma olasılığı ve ağırlıklı pipeline.
+- Fırsat türü, dosya önceliği ve müşteri termininden önce doğrulanan iç kalite termini.
+- MEDDPICC tabanlı sekiz boyutlu fırsat yeterlilik matrisi ve otomatik hazırlık skoru.
+- Rol, etki, tutum, iletişim ve not alanlarıyla düzenlenebilir paydaş haritası.
+- Sorumlu, durum, öncelik, termin, hatırlatma ve not içeren proje aksiyon planı.
+- Kritik bulgu, teyit, yeterlilik engeli, yaklaşan termin ve geciken aksiyonları birleştiren Aksiyon ve Uyarı Merkezi.
+- Ayarlanabilir günlük özet saati, presales özeti ve veri kaybetmeden erteleme yapan sessiz saatler.
+- Windows bildiriminden ilgili görev, presales dosyası, bulgu veya aksiyona doğrudan geçiş ve **Aç** eylemi.
+- Dosya içi sabit bölüm navigasyonu ve canlı portföy filtresi.
+
+### Değişti
+
+- Presales JSON dışa aktarma şeması yeterlilik, paydaş ve aksiyonları içeren sürüm 3'e yükseltildi.
+- Günlük özet görevlerin yanında aktif presales portföyünü, yakın terminleri ve kritik konu sayısını gösteriyor.
+- Portföy ve dosya ekranları 4K, masaüstü ve dar ekranlarda daha yoğun ama taranabilir bir komuta merkezi düzenine taşındı.
+- Global arama artık paydaş, proje aksiyonu ve yeterlilik notlarını da kapsıyor.
+
 ## [0.2.1] - 2026-08-29
 
 ### Eklendi
@@ -81,6 +102,7 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 - Docker, GitHub Actions, Linux VM ve otomatik SQLite yedekleme dosyaları.
 - MIT lisansı ve açık kaynak katkı belgeleri.
 
+[0.3.0]: https://github.com/mrctnd/gerit/releases/tag/v0.3.0
 [0.2.1]: https://github.com/mrctnd/gerit/releases/tag/v0.2.1
 [0.2.0]: https://github.com/mrctnd/gerit/releases/tag/v0.2.0
 [0.1.1]: https://github.com/mrctnd/gerit/releases/tag/v0.1.1

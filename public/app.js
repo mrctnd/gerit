@@ -205,6 +205,15 @@
     });
   }
 
+  function revealHashTarget() {
+    if (!window.location.hash) return;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (target instanceof HTMLDetailsElement) target.open = true;
+    window.setTimeout(() => target.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' }), 80);
+  }
+
   function setupProductEditor(editor) {
     const rowsContainer = editor.querySelector('[data-product-rows]');
     const template = editor.querySelector('[data-product-template]');
@@ -341,6 +350,24 @@
 
   document.querySelectorAll('[data-product-editor]').forEach(setupProductEditor);
 
+  const caseFilter = document.querySelector('[data-case-filter]');
+  caseFilter?.addEventListener('input', () => {
+    const query = caseFilter.value.trim().toLocaleLowerCase('tr-TR');
+    document.querySelectorAll('[data-case-row]').forEach((row) => {
+      row.hidden = Boolean(query) && !String(row.dataset.caseSearch || '').includes(query);
+    });
+  });
+
+  document.querySelectorAll('[data-attention-filter]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const filter = button.dataset.attentionFilter;
+      document.querySelectorAll('[data-attention-filter]').forEach((item) => item.classList.toggle('active', item === button));
+      document.querySelectorAll('[data-attention-severity]').forEach((row) => {
+        row.hidden = filter !== 'all' && row.dataset.attentionSeverity !== filter;
+      });
+    });
+  });
+
   document.addEventListener('keydown', (event) => {
     const typing = isTyping(event.target);
 
@@ -445,4 +472,5 @@
   syncAppearanceControls();
   previewMotion();
   window.requestAnimationFrame(revealWorkspace);
+  revealHashTarget();
 })();

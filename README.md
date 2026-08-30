@@ -30,6 +30,9 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Sistem, akıcı ve sakin profillerde belirgin ama ölçülü mikro etkileşimler
 - Masaüstünde yerel Windows bildirimi; isteğe bağlı olarak ntfy ile telefon bildirimi
 - Müşteri, ihale/fırsat referansı, üretici, ürün/model, rakip, termin ve teklif kararıyla Presales Merkezi
+- Fırsat türü, öncelik, teklif bedeli, yaklaşık maliyet, marj, kazanma olasılığı ve para birimiyle ağırlıklı pipeline
+- MEDDPICC tabanlı sekiz başlıklı yeterlilik değerlendirmesi, karar ağı/paydaş haritası ve iç proje aksiyon planı
+- Kritik bulgu, teyit, yaklaşan termin ve geciken aksiyonları birleştiren Aksiyon ve Uyarı Merkezi
 - Şartname maddesi, BOM/kitlist, ürün kararı, rekabet, değişiklik talebi, şartname cevabı, maliyet ve üretici teyidi kayıtları
 - Platform kabiliyeti, BOM'a dahil olma, konfigürasyon uyumu ve lisans/servis entitlement kanıtlarını ayrı izleme
 - Standart uygunluk statüleri, risk puanı, sorumlu/aksiyon takibi, yerel hatırlatma ve dosya bazlı JSON dışa aktarma
@@ -139,6 +142,12 @@ Her dosyanın altında aşağıdaki çalışma türleri ayrı kayıtlar olarak i
 
 Her kayıtta platform desteği, teklife dahil olma, konfigürasyon uyumu ve lisans/servis hakkı ayrı kanıt alanlarıdır. Durumlar `Uygun`, `Şartlı Uygun`, `Uygun Değil - Değişiklik Gerekli`, `Teyit / Netleştirme` ve `Kapsam Dışı` standardını kullanır. Olasılık, etki ve kanıt açığından risk puanı hesaplanır. Dosya ve kayıt hatırlatmaları Windows bildirimi olarak gönderilir; **JSON dışa aktar** işlemi dosyanın tüm alanlarını ve kayıtlarını yerel bir çıktıya alır.
 
+Dosya kontrol odası ayrıca fırsat türü, öncelik, para birimi, tahmini teklif bedeli, yaklaşık maliyet, marj, kazanma olasılığı, müşteri termini ve daha erken bir iç kalite terminini izler. **Karar hazırlığı** bölümü ölçülebilir değer, ekonomik karar verici, karar kriterleri/süreci, satın alma süreci, ihtiyaç etkisi, iç destekçi ve rekabet başlıklarını ayrı ayrı doğrular. **Paydaş haritası** etki ve tutumu; **Proje aksiyonları** sorumlu, durum, öncelik, iç termin ve hatırlatmayı saklar.
+
+**Aksiyon Merkezi**, açık presales dosyalarındaki kritik riskleri, uygunsuzlukları, teyitleri, yeterlilik engellerini, yaklaşan müşteri terminlerini ve geciken iç aksiyonları tek öncelik kuyruğunda toplar. Portföy ekranı para birimlerini karıştırmadan toplam ve olasılıkla ağırlıklandırılmış pipeline değerlerini gösterir.
+
+Bu iş akışı; [APMP Winning Business Ecosystem](https://apmp.org/Web/Web/About-Us/Winning-Business-Ecosystem.aspx) içindeki bid/no-bid, compliance matrix ve aşamalı review yaklaşımını; [Salesforce Opportunity Management](https://trailhead.salesforce.com/content/learn/modules/leads_opportunities_lightning_experience/work-your-opportunities) içindeki aşama, olasılık, kapanış tarihi ve contact role görünürlüğünü; [MEDDPICC](https://meddicc.com/meddpicc-sales-methodology-and-process) yeterlilik boyutlarını yerel ve tek kullanıcılı bir presales çalışma biçimine uyarlar.
+
 ## Klavye kısayolları
 
 | Tuş | İşlem |
@@ -187,7 +196,7 @@ Komut web uygulamasıyla aynı `.env` ve SQLite dosyasını kullanır. Global ba
 
 5. Gerit'i yeniden başlatın.
 
-Masaüstü uygulamasında üst bardaki **Dene** düğmesiyle yerel bildirimi kontrol edebilirsiniz. Gerit açıkken her dakika özel hatırlatmaları ve son tarihi gelen işleri kontrol eder; saat 07:00'de günün listesini gönderir. Uygulamayı 07:00'den sonra açarsanız günlük özet o gün yalnızca bir kez gönderilir.
+Masaüstü uygulamasında üst bardaki **Dene** düğmesiyle yerel bildirimi kontrol edebilirsiniz. Gerit açıkken her dakika görev, presales dosyası, analiz kaydı ve proje aksiyonu hatırlatmalarını kontrol eder. Bildirime tıklamak ilgili kaydı açar. **Aksiyon Merkezi** üzerinden günlük özet saati, presales kapsamı ve sessiz saatler ayarlanabilir; sessiz saatte gelen uyarı kaybolmaz, çalışma penceresi açılınca gönderilir.
 
 Node.js/web kurulumunda telefon bildirimi için Gerit ntfy kullanır. Bir işin özel hatırlatma zamanı ayrıntı ekranından seçilir ve son tarihten önce olmalıdır. Saat dilimini `APP_TIMEZONE`, sunucuyu `NTFY_SERVER` belirler. Herkese açık `ntfy.sh` kullanıyorsanız konu adını parola gibi koruyun.
 
@@ -199,7 +208,7 @@ Windows masaüstü kurulumunda varsayılan dosya:
 %APPDATA%\Gerit\data\tasks.sqlite3
 ```
 
-Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, presales dosyaları, çoklu ürün satırları, analiz/kanıt kayıtları, hatırlatma durumları ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Eski tek ürün alanları yeni sürüm ilk açıldığında otomatik olarak ürün listesine taşınır. Gerit masaüstü sürümü bu verileri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
+Bu klasör her Windows kullanıcısı için ayrıdır. Görevler, çalışma notları, presales dosyaları, çoklu ürün satırları, yeterlilik değerlendirmeleri, paydaşlar, proje aksiyonları, analiz/kanıt kayıtları, bildirim düzeni ve görünüm tercihleri aynı SQLite dosyasında kalıcıdır. Eski veriler yeni sürüm ilk açıldığında otomatik olarak genişletilmiş şemaya taşınır. Gerit masaüstü sürümü bu verileri buluta göndermez; bildirimler Windows tarafından yerel olarak gösterilir.
 
 Node.js kurulumunda varsayılan dosya:
 

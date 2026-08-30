@@ -29,6 +29,9 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 - Distinct but restrained micro-interactions across system, full, and reduced motion profiles
 - Local Windows notifications on desktop, with optional ntfy phone notifications
 - A Presales Center for customer/opportunity data, tender references, vendors, products, competitors, deadlines, and bid decisions
+- Weighted pipeline with opportunity type, priority, value, estimated cost, margin, win probability, and currency
+- Eight-dimension MEDDPICC qualification, stakeholder mapping, and an owned internal action plan
+- An Action and Alert Center combining critical findings, clarifications, deadlines, and overdue actions
 - Detailed records for specification clauses, BOM/kitlists, product decisions, competition, change requests, responses, cost risks, and vendor questions
 - Separate evidence gates for platform capability, quoted inclusion, configuration compatibility, and license/service entitlement
 - Standard compliance statuses, scored risk, owners/actions, local reminders, and per-case JSON export
@@ -106,6 +109,12 @@ Use **Presales Merkezi** in the sidebar to open a separate case for each custome
 
 Case records cover specification clauses, atomic requirements, BOM/kitlist lines and quantities, product selection, same-segment competition, change requests, specification responses, cost/responsibility risks, and vendor confirmations. Platform capability, quoted inclusion, configuration compatibility, and license/service entitlement are stored as independent evidence gates. Records use the Turkish compliance standard (`Uygun`, `Şartlı Uygun`, `Uygun Değil - Değişiklik Gerekli`, `Teyit / Netleştirme`, and `Kapsam Dışı`), calculate priority from probability, impact, and evidence gap, and can trigger local Windows reminders. JSON export includes the full case and all records.
 
+The case control room also tracks opportunity type, priority, currency, estimated proposal value, cost, margin, win probability, customer deadline, and an earlier internal quality gate. Qualification covers measurable value, economic buyer, decision criteria and process, paper process, pain, champion, and competition. Stakeholders carry role, influence, and stance; project actions carry owner, status, priority, internal due date, and reminder.
+
+The **Aksiyon Merkezi** combines critical risks, noncompliance, clarifications, qualification blockers, customer deadlines, and overdue internal actions in one prioritized queue. The portfolio keeps currencies separate while presenting total and probability-weighted pipeline.
+
+The workflow adapts the bid/no-bid, compliance matrix, and staged-review practices from the [APMP Winning Business Ecosystem](https://apmp.org/Web/Web/About-Us/Winning-Business-Ecosystem.aspx), stage/probability/contact-role visibility from [Salesforce Opportunity Management](https://trailhead.salesforce.com/content/learn/modules/leads_opportunities_lightning_experience/work-your-opportunities), and the eight [MEDDPICC](https://meddicc.com/meddpicc-sales-methodology-and-process) qualification dimensions to a local single-user presales workspace.
+
 ## Personalize the interface
 
 Use the **Görünüm** button in the top bar or press `g`. Choose between Atlas, Forest, Violet, and Ember palettes; Modern, Humanist, Editorial, and Technical font sets; and system, full, or reduced motion. Scale the complete interface from 80% to 160% for high-density displays, or use `Ctrl` + `+`, `Ctrl` + `-`, and `Ctrl` + `0`. Motion changes are reflected immediately in the live preview.
@@ -124,7 +133,7 @@ These preferences remain in the same local SQLite database as your tasks. They a
 
 4. Restart Gerit.
 
-In the desktop app, use the **Dene** button in the top bar to test local notifications. While Gerit is open, it checks custom reminders and due tasks every minute and sends the daily digest at 07:00. If you open the app after 07:00, the digest is sent once for that day.
+In the desktop app, use **Dene** in the top bar to test local notifications. Gerit checks task, case, analysis-record, and project-action reminders every minute. Clicking a notification opens the relevant record. The Action Center configures the digest hour, presales coverage, and quiet hours; alerts that become due while quiet are retained and delivered afterward.
 
 In Node.js/web installs, Gerit uses ntfy for phone notifications. Treat a public ntfy topic name like a password. Custom reminder times are configured on each task and must be earlier than the deadline. `APP_TIMEZONE` controls reminder and digest time; `NTFY_SERVER` can point to a self-hosted ntfy instance.
 
@@ -136,7 +145,7 @@ The Windows desktop installer stores the database here by default:
 %APPDATA%\Gerit\data\tasks.sqlite3
 ```
 
-Each Windows user gets a separate local database. Tasks, work notes, presales cases, multi-product rows, evidence records, reminder state, and appearance preferences are persisted in the same SQLite file. Existing single-product case data is migrated into the product list automatically on first launch. The desktop app does not send this data to the cloud, and notifications are shown locally by Windows.
+Each Windows user gets a separate local database. Tasks, work notes, presales cases, multi-product rows, qualification, stakeholders, project actions, evidence records, reminder settings, and appearance preferences are persisted in the same SQLite file. Existing data is migrated into the expanded schema automatically on first launch. The desktop app does not send this data to the cloud, and notifications are shown locally by Windows.
 
 The default Node.js database is `data/tasks.sqlite3`. Override it with `DATABASE_PATH`.
 
