@@ -467,9 +467,15 @@ kbd {
 }
 
 .page-wrap {
-  width: min(940px, calc(100% - 64px));
+  width: min(1180px, calc(100% - 64px));
   margin: 0 auto;
   padding: 54px 0 64px;
+}
+
+.view-presales-dashboard .page-wrap,
+.view-presales-case .page-wrap,
+.view-presales-attention .page-wrap {
+  width: min(1560px, calc(100% - 56px));
 }
 
 .page-heading {

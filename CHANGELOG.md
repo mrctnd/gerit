@@ -4,6 +4,18 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ## [Yayımlanmadı]
 
+## [0.3.1] - 2026-08-31
+
+### Eklendi
+
+- Türkçe ve İngilizce README'ye Windows setup, Linux paketi, Docker, GitHub CLI ve kaynak arşivleri için görünür hızlı indirme merkezi.
+- Release dosyalarını doğrulamak için otomatik üretilen `SHA256SUMS.txt`.
+
+### Değişti
+
+- Genel görev ekranları daha geniş bir çalışma alanına taşındı; Presales ve Aksiyon Merkezi geniş ekranlarda kullanılabilir yatay alanı daha iyi değerlendiriyor.
+- Windows güncelleme, yerel veri koruma ve indirme doğrulama adımları daha açık hale getirildi.
+
 ## [0.3.0] - 2026-08-30
 
 ### Eklendi

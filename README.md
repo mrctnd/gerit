@@ -1,19 +1,48 @@
-# Gerit
-
 <p align="center">
   <img src="public/brand/gerit-mark.png" alt="Gerit logosu" width="116">
 </p>
 
-[Türkçe](README.md) · [English](README.en.md)
+<h1 align="center">Gerit</h1>
 
-[![Test](https://github.com/mrctnd/gerit/actions/workflows/ci.yml/badge.svg)](https://github.com/mrctnd/gerit/actions/workflows/ci.yml)
-[![GitHub release](https://img.shields.io/github/v/release/mrctnd/gerit?display_name=tag)](https://github.com/mrctnd/gerit/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-22%2B-3c873a.svg)](https://nodejs.org/)
+<p align="center"><strong>Görev, fırsat, şartname, BOM ve presales aksiyonlarını kendi bilgisayarında yöneten yerel çalışma merkezi.</strong></p>
+
+<p align="center"><strong>Türkçe</strong> · <a href="README.en.md">English</a></p>
+
+<p align="center">
+  <a href="https://github.com/mrctnd/gerit/actions/workflows/ci.yml"><img alt="Test durumu" src="https://github.com/mrctnd/gerit/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/mrctnd/gerit/releases"><img alt="Son sürüm" src="https://img.shields.io/github/v/release/mrctnd/gerit?display_name=tag"></a>
+  <a href="LICENSE"><img alt="MIT lisansı" src="https://img.shields.io/badge/license-MIT-2563eb.svg"></a>
+  <a href="https://nodejs.org/"><img alt="Node.js 22 ve üzeri" src="https://img.shields.io/badge/Node.js-22%2B-3c873a.svg"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe"><img alt="Windows x64 setup indir" src="https://img.shields.io/badge/Windows_x64-Setup_indir-0a66c2?logo=windows11&logoColor=white"></a>
+  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz"><img alt="Linux x64 paket indir" src="https://img.shields.io/badge/Linux_x64-Paketi_indir-333333?logo=linux&logoColor=white"></a>
+  <a href="https://github.com/mrctnd/gerit/releases"><img alt="Tüm sürümler" src="https://img.shields.io/badge/GitHub-Tum_surumler-24292f?logo=github&logoColor=white"></a>
+</p>
 
 **Gerit**, görevlerini ve presales çalışmalarını tek yerde yürütmen için tasarlanmış Türkçe, klavye odaklı ve yerel öncelikli çalışma merkezidir. Hesap, telemetri, reklam, iş birliği veya çevrimdışı eşitleme yoktur. Bütün veriniz yedekleyebileceğiniz tek bir SQLite dosyasında kalır.
 
 Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
+
+## Hemen başla
+
+| Kurulum yolu | Kimler için? | Gereksinim | Başlangıç |
+| --- | --- | --- | --- |
+| **Windows x64 setup** (önerilen) | Windows 10/11 kullanıcıları | Yok | [Setup dosyasını doğrudan indir](https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe) |
+| **Docker Compose** | Kolay güncelleme ve taşınabilir servis isteyenler | Docker Desktop veya Docker Engine | [Docker adımlarına git](#docker-ile-kurulum) |
+| **Linux x64 paketi** | Hazır üretim bağımlılıklarıyla çalıştırmak isteyenler | Node.js 22.13+ | [Linux paketini doğrudan indir](https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz) |
+| **Kaynak kod** | Geliştiriciler ve özelleştirme yapanlar | Git, Node.js 22.13+, npm 10+ | [Node.js adımlarına git](#nodejs-ile-kurulum) |
+
+Windows kullanıyorsanız ilk seçeneği indirin, setup'ı çalıştırın ve **Gerit** kısayolunu açın. Güncelleme için uygulamayı kapatıp yeni setup'ı mevcut kurulumun üzerine çalıştırmanız yeterlidir; görevleriniz, presales dosyalarınız ve görünüm ayarlarınız korunur.
+
+Sürüm dosyalarının tamamı [GitHub Releases](https://github.com/mrctnd/gerit/releases) sayfasındadır. GitHub CLI kullananlar kurulumu terminalden de indirebilir:
+
+```powershell
+gh release download v0.3.1 --repo mrctnd/gerit --pattern "Gerit-Setup-*.exe"
+```
+
+Kaynak kodu arşiv olarak almak için [ZIP](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.1.zip) veya [tar.gz](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.1.tar.gz) bağlantısını kullanabilirsiniz.
 
 ## Neler sunuyor?
 
@@ -39,16 +68,27 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 - Her terminalden `t add "..."` ile hızlı yakalama
 - Express + EJS + yerleşik `node:sqlite`; istemci çerçevesi ve bulut hesabı yok
 
-## En kolay kurulum: Windows masaüstü uygulaması
+## Windows masaüstü kurulumu
 
-[Releases](https://github.com/mrctnd/gerit/releases) sayfasından `Gerit-Setup-<sürüm>-x64.exe` dosyasını indirin ve kurulumu çalıştırın. Başlat menüsü veya masaüstündeki **Gerit** kısayolundan açabilirsiniz.
+1. [`Gerit-Setup-0.3.1-x64.exe`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe) dosyasını indirin.
+2. Setup'ı açın, yalnızca kendi kullanıcı hesabınız için kurulum klasörünü seçin.
+3. Başlat menüsü veya masaüstündeki **Gerit** kısayolunu açın.
+4. Bildirim izni sorulursa hatırlatmaları alabilmek için izin verin.
 
 - Node.js, Docker, hesap veya internet bağlantısı gerekmez.
 - Uygulama yalnızca kendi bilgisayarınızdaki `127.0.0.1` adresini kullanır; yerel ağa açılmaz.
-- Görevler, presales dosyaları ve görünüm tercihleri `%APPDATA%\\Gerit\\data\\tasks.sqlite3` dosyasında tutulur ve başka bir bilgisayara gönderilmez.
+- Görevler, presales dosyaları ve görünüm tercihleri `%APPDATA%\Gerit\data\tasks.sqlite3` dosyasında tutulur ve başka bir bilgisayara gönderilmez.
 - Masaüstü sürümünde hatırlatmalar ve günlük özet Windows bildirimi olarak yerel gönderilir.
 - Kaldırma işlemi veri dosyasını silmez. Yeniden kurduğunuzda görevleriniz kaldığı yerden açılır.
 - Kurulum paketi henüz kod imzalı değilse Windows SmartScreen ilk çalıştırmada yayıncı uyarısı gösterebilir.
+
+### İndirmeyi doğrulama
+
+Her sürümde yayınlanan [`SHA256SUMS.txt`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/SHA256SUMS.txt) dosyasındaki değer ile indirdiğiniz setup'ın özetini karşılaştırın:
+
+```powershell
+Get-FileHash .\Gerit-Setup-0.3.1-x64.exe -Algorithm SHA256
+```
 
 ## Docker ile kurulum
 
@@ -68,9 +108,9 @@ docker compose down                # durdur
 git pull --ff-only && docker compose up -d --build   # güncelle
 ```
 
-## Linux arşiv paketi
+## Linux x64 paketi
 
-[Releases](https://github.com/mrctnd/gerit/releases) sayfasındaki Linux paketini indirin ve arşivi açın. Node.js 22.13+ kurulu olmalıdır.
+[`gerit-v0.3.1-linux-x64.tar.gz`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz) paketini indirin ve arşivi açın. Node.js 22.13+ kurulu olmalıdır.
 
 Linux:
 
@@ -92,6 +132,8 @@ npm ci
 npm run setup
 npm start
 ```
+
+Tarayıcıdan [http://127.0.0.1:3030](http://127.0.0.1:3030) adresini açın. İlk çalıştırmada `.env` ve yerel veri klasörü hazırlanır.
 
 Geliştirme sırasında otomatik yeniden başlatma:
 

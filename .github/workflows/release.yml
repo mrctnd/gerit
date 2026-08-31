@@ -96,6 +96,10 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: SHA-256 sağlama toplamlarını oluştur
+        working-directory: dist
+        shell: bash
+        run: sha256sum Gerit-Setup-*.exe gerit-*-linux-x64.tar.gz > SHA256SUMS.txt
       - name: Yayını oluştur
         env:
           GH_TOKEN: ${{ github.token }}
