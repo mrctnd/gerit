@@ -13,6 +13,7 @@ import {
   deleteTask,
   duplicateTask,
   getCompletedTasks,
+  getCalendarTasks,
   getCounts,
   getInboxTasks,
   getProjectTasks,
@@ -54,6 +55,7 @@ import {
 } from './db.js';
 import {
   activityLabel,
+  calendarMonth,
   dayHeading,
   completedLabel,
   dueMeta,
@@ -463,6 +465,35 @@ export function createApp({ notificationPublisher } = {}) {
     });
   });
 
+  app.get('/calendar', (req, res) => {
+    const calendar = calendarMonth(req.query.month);
+    const tasks = decorateTasks(getCalendarTasks(calendar.start, calendar.end));
+    const tasksByDate = new Map();
+    for (const task of tasks) {
+      if (!tasksByDate.has(task.due.dateKey)) tasksByDate.set(task.due.dateKey, []);
+      tasksByDate.get(task.due.dateKey).push(task);
+    }
+
+    const monthTasks = tasks.filter((task) => task.due.dateKey.startsWith(`${calendar.key}-`));
+    const openTasks = monthTasks.filter((task) => !task.completedAt);
+    renderPage(res, {
+      title: 'Takvim',
+      kicker: 'Aylık iş planı',
+      kind: 'calendar',
+      calendar: {
+        ...calendar,
+        days: calendar.days.map((day) => ({ ...day, tasks: tasksByDate.get(day.dateKey) || [] })),
+        stats: {
+          total: monthTasks.length,
+          open: openTasks.length,
+          completed: monthTasks.length - openTasks.length,
+          overdue: openTasks.filter((task) => task.due.overdue).length,
+          unscheduled: res.locals.counts.inbox,
+        },
+      },
+    });
+  });
+
   app.get('/inbox', (_req, res) => {
     renderPage(res, {
       title: 'Gelen Kutusu',
@@ -474,25 +505,27 @@ export function createApp({ notificationPublisher } = {}) {
     });
   });
 
-  app.get('/workflow', (_req, res) => {
+  app.get('/tasks', (_req, res) => {
     const tasks = decorateTasks(getWorkflowTasks());
-    const statusOrder = ['in_progress', 'planned', 'waiting', 'blocked'];
+    const waiting = tasks.filter((task) => ['waiting', 'blocked'].includes(task.status));
+    const focus = tasks.filter((task) => !waiting.includes(task)
+      && (task.status === 'in_progress' || task.due.overdue || task.due.isToday));
+    const planned = tasks.filter((task) => !waiting.includes(task) && !focus.includes(task));
     renderPage(res, {
-      title: 'İş Akışı',
-      kicker: 'Aşamalar ve ilerleme',
+      title: 'Tüm İşler',
+      kicker: 'Sade ve öncelikli çalışma listesi',
       kind: 'grouped',
-      groups: statusOrder.map((status) => {
-        const meta = taskStatusMeta(status);
-        return {
-          title: meta.label,
-          tone: status === 'blocked' ? 'danger' : 'default',
-          tasks: tasks.filter((task) => task.status === status),
-        };
-      }),
+      groups: [
+        { title: 'Şimdi', tone: focus.some((task) => task.due.overdue) ? 'danger' : 'default', tasks: focus },
+        { title: 'Yapılacak', tone: 'default', tasks: planned },
+        { title: 'Bekleyen / Engellenen', tone: waiting.some((task) => task.status === 'blocked') ? 'danger' : 'default', tasks: waiting },
+      ],
       emptyTitle: 'Takip edilecek açık iş yok',
-      emptyCopy: 'Yeni bir iş eklediğinde aşamasını ve ilerleme yüzdesini buradan izleyebilirsin.',
+      emptyCopy: 'Yeni bir iş eklediğinde önceliğine ve durumuna göre burada görünür.',
     });
   });
+
+  app.get('/workflow', (_req, res) => res.redirect('/tasks'));
 
   app.get('/completed', (_req, res) => {
     renderPage(res, {

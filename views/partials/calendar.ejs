@@ -1,0 +1,63 @@
+<section class="calendar-workspace" aria-label="Aylık görev takvimi">
+  <header class="calendar-toolbar">
+    <nav class="calendar-navigation" aria-label="Ay seçimi">
+      <a href="/calendar?month=<%= calendar.previousKey %>" aria-label="Önceki ay">←</a>
+      <strong><%= calendar.title %></strong>
+      <a href="/calendar?month=<%= calendar.nextKey %>" aria-label="Sonraki ay">→</a>
+      <a class="calendar-today-link" href="/calendar">Bugün</a>
+    </nav>
+    <div class="calendar-stats" aria-label="Ay özeti">
+      <span><strong><%= calendar.stats.open %></strong> açık</span>
+      <span><strong><%= calendar.stats.completed %></strong> tamamlandı</span>
+      <% if (calendar.stats.overdue) { %><span class="calendar-stat-danger"><strong><%= calendar.stats.overdue %></strong> geciken</span><% } %>
+      <a href="/tasks"><strong><%= calendar.stats.unscheduled %></strong> tarihsiz</a>
+    </div>
+  </header>
+
+  <form class="calendar-quick-add" action="/tasks" method="post" id="quick-add-form">
+    <input type="hidden" name="returnTo" value="/calendar?month=<%= calendar.key %>">
+    <label class="sr-only" for="quick-add">Takvime iş ekle</label>
+    <span aria-hidden="true">+</span>
+    <input id="quick-add" name="quick" required autocomplete="off" placeholder="Toplantıyı 14 Eylül 10:00 planla #proje p2">
+    <button type="submit">Takvime ekle</button>
+  </form>
+
+  <div class="calendar-month" role="grid" aria-label="<%= calendar.title %>">
+    <% ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].forEach((weekday) => { %>
+      <div class="calendar-weekday" role="columnheader"><%= weekday %></div>
+    <% }) %>
+    <% calendar.days.forEach((day) => { %>
+      <article class="calendar-day <%= day.inMonth ? '' : 'is-outside' %> <%= day.isToday ? 'is-today' : '' %> <%= day.isWeekend ? 'is-weekend' : '' %>" role="gridcell" aria-label="<%= day.ariaLabel %>">
+        <header><time datetime="<%= day.dateKey %>"><%= day.dayNumber %></time><% if (day.isToday) { %><span>Bugün</span><% } %></header>
+        <div class="calendar-day-tasks">
+          <% day.tasks.forEach((task) => { %>
+            <a class="calendar-task status-<%= task.statusMeta.tone %> <%= task.completedAt ? 'is-completed' : '' %> <%= task.due.overdue && !task.completedAt ? 'is-overdue' : '' %>" href="/tasks/<%= task.id %>/edit?from=<%= encodeURIComponent(`/calendar?month=${calendar.key}`) %>" title="<%= task.title %>">
+              <span class="calendar-task-time"><%= task.due.short || 'Gün boyu' %></span>
+              <strong><%= task.title %></strong>
+              <% if (task.project || task.priority) { %><small><%= [task.project ? `#${task.project}` : '', task.priority ? `P${task.priority}` : ''].filter(Boolean).join(' · ') %></small><% } %>
+            </a>
+          <% }) %>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+
+  <div class="calendar-agenda" aria-label="Aylık gündem">
+    <% const agendaDays = calendar.days.filter((day) => day.inMonth && day.tasks.length); %>
+    <% if (!agendaDays.length) { %>
+      <div class="calendar-empty"><strong>Bu ay tarihli iş yok</strong><span>Yukarıdaki alandan tarih yazarak ilk işi ekleyebilirsin.</span></div>
+    <% } %>
+    <% agendaDays.forEach((day) => { %>
+      <section>
+        <header><time datetime="<%= day.dateKey %>"><%= day.ariaLabel %></time><span><%= day.tasks.length %> iş</span></header>
+        <% day.tasks.forEach((task) => { %>
+          <a class="calendar-agenda-task <%= task.completedAt ? 'is-completed' : '' %>" href="/tasks/<%= task.id %>/edit?from=<%= encodeURIComponent(`/calendar?month=${calendar.key}`) %>">
+            <time><%= task.due.short || 'Gün boyu' %></time>
+            <span><strong><%= task.title %></strong><small><%= [task.statusMeta.label, task.project ? `#${task.project}` : ''].filter(Boolean).join(' · ') %></small></span>
+            <% if (task.priority) { %><b>P<%= task.priority %></b><% } %>
+          </a>
+        <% }) %>
+      </section>
+    <% }) %>
+  </div>
+</section>

@@ -50,8 +50,9 @@ For source archives, use the [ZIP](https://github.com/mrctnd/gerit/archive/refs/
 - Turkish and English natural dates through chrono-node
 - Projects with `#tags`, priorities `p1`–`p3`, and free-text notes
 - Recurrence from Turkish/English phrases or standard RRULE strings
-- Today, Upcoming, Inbox, project, and Completed views
-- A Workflow view for Planned, In progress, Waiting, and Blocked stages
+- Today, a large monthly Calendar, All Tasks, project, and Completed views
+- A seven-column month plan on desktop and a date-based agenda on narrow screens
+- A simplified All Tasks queue grouped into Now, To do, and Waiting / Blocked
 - Per-task progress, detailed descriptions, and timestamped work notes
 - Overdue tasks pinned in red at the top of Today
 - Four color palettes, four local font sets, 80-160% interface scaling, and device-local appearance preferences
@@ -143,7 +144,7 @@ call Sam tomorrow 4pm #home p2
 water plants every mon,thu 9am #home p3
 ```
 
-Tasks without a date go to Inbox. The task detail screen tracks stage, progress, deadline, a custom reminder, and timestamped work notes. Completing a recurring task creates the next occurrence automatically.
+Tasks without a date appear as `Tarihsiz` in All Tasks. The task detail screen keeps status, deadline, project, and priority immediately visible while progress, custom reminders, and recurrence live under optional details. Timestamped work notes remain searchable, and completing a recurring task creates the next occurrence automatically.
 
 ## Presales Center
 

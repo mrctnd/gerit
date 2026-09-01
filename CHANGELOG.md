@@ -4,6 +4,17 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ## [Yayımlanmadı]
 
+### Eklendi
+
+- Tarihli açık ve tamamlanmış işleri aynı ay üzerinde gösteren, önceki/sonraki ay geçişleri ve ay özeti bulunan büyük görev takvimi.
+- Dar ekranlarda aylık ızgara yerine tarih bazlı okunaklı gündem görünümü.
+
+### Değişti
+
+- Görev navigasyonu **Bugün**, **Takvim**, **Tüm İşler** ve **Tamamlananlar** olmak üzere dört anlaşılır girişte toplandı; mevcut eski bağlantılar korunarak **Tüm İşler** görünümüne yönlendirildi.
+- **Tüm İşler** ekranı görevleri **Şimdi**, **Yapılacak** ve **Bekleyen / Engellenen** gruplarına ayıran daha sade bir öncelik kuyruğuna dönüştürüldü.
+- Bugün özeti, görev satırları, hızlı ekleme ve görev düzenleme ekranlarındaki ikincil bilgiler azaltıldı; ilerleme, özel hatırlatma ve tekrar alanları isteğe bağlı ayrıntılara taşındı.
+
 ## [0.3.1] - 2026-08-31
 
 ### Eklendi

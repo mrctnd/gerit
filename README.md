@@ -50,8 +50,9 @@ Kaynak kodu arşiv olarak almak için [ZIP](https://github.com/mrctnd/gerit/arch
 - Türkçe ve İngilizce doğal tarih: `yarın 16:00`, `cuma 09:30`, `tomorrow 4pm`
 - Tek satırda proje ve öncelik: `#finans p1`
 - Tekrarlar: `her pazartesi,perşembe`, `her ayın 1’i`, `every mon,thu` ve RRULE
-- Bugün, Yaklaşan, Gelen Kutusu, proje ve Tamamlananlar görünümleri
-- Planlandı, Devam ediyor, Beklemede ve Bloke aşamalarını bir arada gösteren İş Akışı görünümü
+- Bugün, büyük aylık Takvim, Tüm İşler, proje ve Tamamlananlar görünümleri
+- Masaüstünde 7 sütunlu ay planı; dar ekranlarda tarih bazlı profesyonel gündem listesi
+- Açık işleri Şimdi, Yapılacak ve Bekleyen / Engellenen olarak sade biçimde gruplandıran Tüm İşler görünümü
 - Her iş için yüzde ilerleme, ayrıntılı açıklama ve zaman damgalı çalışma notları
 - Geciken işleri Bugün görünümünün en üstünde kırmızı sabitleme
 - Serbest metin notları, görev kopyalama ve yeniden açma
@@ -162,8 +163,8 @@ call Sam tomorrow 4pm #home p2
 
 - `#proje` işi bir projeye bağlar.
 - `p1`, `p2`, `p3` önceliği belirler.
-- Tarih verilmezse iş Gelen Kutusu'na düşer.
-- İş ayrıntısından açıklama, aşama, ilerleme yüzdesi, tarih, özel hatırlatma, proje, öncelik ve RRULE düzenlenebilir.
+- Tarih verilmezse iş **Tüm İşler** görünümünde `Tarihsiz` olarak izlenir.
+- İş ayrıntısından açıklama, durum, tarih, proje ve öncelik doğrudan; ilerleme yüzdesi, özel hatırlatma ve RRULE ise isteğe bağlı ayrıntılardan düzenlenebilir.
 - İş notları çalışma günlüğüne zaman damgalı olarak eklenir ve genel aramada bulunur.
 - Tekrarlanan iş tamamlandığında sıradaki oluşum otomatik oluşturulur.
 

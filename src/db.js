@@ -554,6 +554,16 @@ export function getUpcomingTasks(start, end) {
   `).all(start, end);
 }
 
+export function getCalendarTasks(start, end) {
+  return db.prepare(`
+    SELECT ${selectColumns}
+    FROM tasks
+    WHERE due_at IS NOT NULL AND due_at >= ? AND due_at < ?
+    ORDER BY due_at ASC, completed_at IS NOT NULL,
+      CASE WHEN priority IS NULL THEN 1 ELSE 0 END, priority ASC, created_at ASC
+  `).all(start, end);
+}
+
 export function getInboxTasks() {
   return db.prepare(`
     SELECT ${selectColumns}

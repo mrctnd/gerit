@@ -34,41 +34,38 @@
           </span>
         </a>
 
-        <nav class="primary-nav" aria-label="İş görünümleri">
-          <a class="nav-item presales-nav <%= currentPath === '/presales' || /^\/presales\/\d/.test(currentPath) ? 'active' : '' %>" href="/presales">
-            <span class="nav-icon" aria-hidden="true">◆</span>
-            <span>Presales Merkezi</span>
-            <% if (presalesSummary.active) { %><span class="nav-count"><%= presalesSummary.active %></span><% } %>
-          </a>
-          <a class="nav-item attention-nav <%= currentPath === '/presales/attention' ? 'active' : '' %>" href="/presales/attention">
-            <span class="nav-icon" aria-hidden="true">!</span>
-            <span>Aksiyon Merkezi</span>
-            <% if (attentionCount) { %><span class="nav-count nav-count-alert"><%= attentionCount %></span><% } %>
-          </a>
+        <nav class="primary-nav" aria-label="Çalışma alanları">
+          <span class="nav-section-label">Görevler</span>
           <a class="nav-item <%= currentPath === '/today' ? 'active' : '' %>" href="/today">
             <span class="nav-icon" aria-hidden="true">●</span>
             <span>Bugün</span>
             <% if (counts.today) { %><span class="nav-count"><%= counts.today %></span><% } %>
           </a>
-          <a class="nav-item <%= currentPath === '/upcoming' ? 'active' : '' %>" href="/upcoming">
+          <a class="nav-item <%= currentPath === '/calendar' ? 'active' : '' %>" href="/calendar">
             <span class="nav-icon calendar-icon" aria-hidden="true">▦</span>
-            <span>Yaklaşan</span>
+            <span>Takvim</span>
             <% if (counts.upcoming) { %><span class="nav-count"><%= counts.upcoming %></span><% } %>
           </a>
-          <a class="nav-item <%= currentPath === '/inbox' ? 'active' : '' %>" href="/inbox">
-            <span class="nav-icon" aria-hidden="true">⌄</span>
-            <span>Gelen Kutusu</span>
-            <% if (counts.inbox) { %><span class="nav-count"><%= counts.inbox %></span><% } %>
-          </a>
-          <a class="nav-item <%= currentPath === '/workflow' ? 'active' : '' %>" href="/workflow">
+          <a class="nav-item <%= ['/tasks', '/workflow', '/inbox', '/upcoming'].includes(currentPath) ? 'active' : '' %>" href="/tasks">
             <span class="nav-icon workflow-icon" aria-hidden="true">◫</span>
-            <span>İş Akışı</span>
-            <% if (counts.workflow) { %><span class="nav-count"><%= counts.workflow %></span><% } %>
+            <span>Tüm İşler</span>
+            <% if (summary.open) { %><span class="nav-count"><%= summary.open %></span><% } %>
           </a>
           <a class="nav-item <%= currentPath === '/completed' ? 'active' : '' %>" href="/completed">
             <span class="nav-icon completed-icon" aria-hidden="true">✓</span>
             <span>Tamamlananlar</span>
             <% if (counts.completed) { %><span class="nav-count"><%= counts.completed %></span><% } %>
+          </a>
+          <span class="nav-section-label nav-section-secondary">Presales</span>
+          <a class="nav-item presales-nav <%= currentPath === '/presales' || /^\/presales\/\d/.test(currentPath) ? 'active' : '' %>" href="/presales">
+            <span class="nav-icon" aria-hidden="true">◆</span>
+            <span>Dosyalar</span>
+            <% if (presalesSummary.active) { %><span class="nav-count"><%= presalesSummary.active %></span><% } %>
+          </a>
+          <a class="nav-item attention-nav <%= currentPath === '/presales/attention' ? 'active' : '' %>" href="/presales/attention">
+            <span class="nav-icon" aria-hidden="true">!</span>
+            <span>Uyarılar</span>
+            <% if (attentionCount) { %><span class="nav-count nav-count-alert"><%= attentionCount %></span><% } %>
           </a>
         </nav>
 
@@ -119,18 +116,6 @@
             <span>Uyarılar</span>
             <% if (attentionCount) { %><b><%= attentionCount %></b><% } %>
           </a>
-          <div class="local-badge <%= config.notificationsEnabled ? 'notifications-on' : '' %>" title="<%= config.notificationMode === 'desktop' ? 'Yerel masaüstü bildirimleri etkin' : config.notificationsEnabled ? 'ntfy bildirimleri etkin' : 'Bildirimler için NTFY_TOPIC ayarlayın' %>">
-            <span aria-hidden="true"></span> <%= config.notificationMode === 'desktop' ? 'Yerel bildirim' : config.notificationsEnabled ? 'Bildirim açık' : 'Şirket içi' %>
-          </div>
-          <% if (config.notificationsEnabled) { %>
-            <form class="notification-test-form" action="/notifications/test" method="post">
-              <input type="hidden" name="returnTo" value="<%= returnPath %>">
-              <button type="submit" title="Bildirim dene" aria-label="Bildirim dene">
-                <span aria-hidden="true">♢</span>
-                <span>Dene</span>
-              </button>
-            </form>
-          <% } %>
         </header>
 
         <div class="page-wrap">
@@ -139,23 +124,13 @@
               <p class="eyebrow"><%= view.kicker %></p>
               <h1><%= view.title %></h1>
             </div>
-            <% if (!['edit', 'presales-dashboard', 'presales-case', 'presales-attention'].includes(view.kind)) { %>
+            <% if (!['edit', 'calendar', 'presales-dashboard', 'presales-case', 'presales-attention'].includes(view.kind)) { %>
               <p class="page-hint"><kbd>N</kbd> ile ekle · <kbd>X</kbd> ile tamamla</p>
             <% } %>
           </section>
 
           <% if (currentPath === '/today') { %>
             <section class="work-summary" aria-label="Günün iş özeti">
-              <article>
-                <span>Açık işler</span>
-                <strong><%= summary.open %></strong>
-                <small>tüm projelerde</small>
-              </article>
-              <article class="summary-active">
-                <span>Devam eden</span>
-                <strong><%= summary.inProgress %></strong>
-                <small><%= summary.blocked ? `${summary.blocked} iş bloke` : 'aktif yürütülen' %></small>
-              </article>
               <article>
                 <span>Bugün</span>
                 <strong><%= summary.dueToday %></strong>
@@ -166,15 +141,15 @@
                 <strong><%= summary.overdue %></strong>
                 <small><%= summary.overdue ? 'önce bunlara odaklan' : 'her şey yolunda' %></small>
               </article>
-              <article class="summary-success">
-                <span>Tamamlanan</span>
-                <strong><%= summary.completedToday %></strong>
-                <small>bugünkü ilerleme</small>
-              </article>
+              <a class="summary-link" href="/tasks">
+                <span>Tüm açık işler</span>
+                <strong><%= summary.open %></strong>
+                <small><%= summary.blocked ? `${summary.blocked} iş bloke` : 'genel listeyi aç' %></small>
+              </a>
             </section>
           <% } %>
 
-          <% if (!['edit', 'message', 'presales-dashboard', 'presales-case', 'presales-attention'].includes(view.kind)) { %>
+          <% if (!['edit', 'calendar', 'message', 'presales-dashboard', 'presales-case', 'presales-attention'].includes(view.kind)) { %>
             <section class="quick-add-card" aria-labelledby="quick-add-title">
               <form action="/tasks" method="post" id="quick-add-form">
                 <input type="hidden" name="returnTo" value="<%= returnPath %>">
@@ -185,19 +160,11 @@
                   <button type="submit">İşi ekle <kbd>↵</kbd></button>
                 </div>
                 <details class="quick-details">
-                  <summary>Aşama, not, hatırlatma ve tekrar ekle</summary>
+                  <summary>İsteğe bağlı ayrıntılar</summary>
                   <div class="quick-detail-grid">
                     <label>
                       <span>Notlar</span>
                       <input name="notes" placeholder="Hatırlaman gereken ayrıntılar">
-                    </label>
-                    <label>
-                      <span>Aşama</span>
-                      <select name="status">
-                        <% taskStatuses.forEach((status) => { %>
-                          <option value="<%= status.value %>"><%= status.label %></option>
-                        <% }) %>
-                      </select>
                     </label>
                     <label>
                       <span>Özel hatırlatma</span>
@@ -215,7 +182,9 @@
           <% } %>
 
           <section class="task-surface" aria-live="polite">
-            <% if (view.kind === 'edit') { %>
+            <% if (view.kind === 'calendar') { %>
+              <%- include('partials/calendar', { calendar: view.calendar }) %>
+            <% } else if (view.kind === 'edit') { %>
               <%- include('partials/edit-task', { task: view.task, taskNotes: view.taskNotes, returnTo: view.returnTo }) %>
             <% } else if (view.kind === 'presales-dashboard') { %>
               <%- include('partials/presales-dashboard', { cases: view.cases }) %>

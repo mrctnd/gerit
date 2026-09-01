@@ -21,6 +21,41 @@ export function upcomingRange(reference = now()) {
   };
 }
 
+export function calendarMonth(value, reference = now()) {
+  const requested = String(value || '');
+  let month = /^\d{4}-\d{2}$/.test(requested)
+    ? DateTime.fromFormat(requested, 'yyyy-LL', { zone: config.timezone, locale: 'tr-TR' })
+    : reference;
+  if (!month.isValid || (requested && month.toFormat('yyyy-LL') !== requested)) month = reference;
+
+  const monthStart = month.startOf('month');
+  const monthEnd = month.endOf('month');
+  const gridStart = monthStart.startOf('week');
+  const gridEnd = monthEnd.endOf('week').plus({ milliseconds: 1 });
+  const days = [];
+
+  for (let cursor = gridStart; cursor < gridEnd; cursor = cursor.plus({ days: 1 })) {
+    days.push({
+      dateKey: cursor.toISODate(),
+      dayNumber: cursor.day,
+      inMonth: cursor.hasSame(monthStart, 'month'),
+      isToday: cursor.hasSame(reference, 'day'),
+      isWeekend: cursor.weekday > 5,
+      ariaLabel: cursor.setLocale('tr-TR').toFormat('d LLLL cccc'),
+    });
+  }
+
+  return {
+    key: monthStart.toFormat('yyyy-LL'),
+    title: monthStart.setLocale('tr-TR').toFormat('LLLL yyyy'),
+    previousKey: monthStart.minus({ months: 1 }).toFormat('yyyy-LL'),
+    nextKey: monthStart.plus({ months: 1 }).toFormat('yyyy-LL'),
+    start: gridStart.toUTC().toISO(),
+    end: gridEnd.toUTC().toISO(),
+    days,
+  };
+}
+
 export function toUtcIso(value) {
   if (!value) return null;
   const parsed = DateTime.fromISO(value, { zone: config.timezone });

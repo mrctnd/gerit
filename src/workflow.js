@@ -1,8 +1,8 @@
 export const TASK_STATUSES = Object.freeze([
-  { value: 'planned', label: 'Planlandı', shortLabel: 'Planlı', tone: 'planned' },
+  { value: 'planned', label: 'Yapılacak', shortLabel: 'Yapılacak', tone: 'planned' },
   { value: 'in_progress', label: 'Devam ediyor', shortLabel: 'Devam ediyor', tone: 'active' },
   { value: 'waiting', label: 'Beklemede', shortLabel: 'Beklemede', tone: 'waiting' },
-  { value: 'blocked', label: 'Bloke', shortLabel: 'Bloke', tone: 'blocked' },
+  { value: 'blocked', label: 'Engellendi', shortLabel: 'Engellendi', tone: 'blocked' },
 ]);
 
 const statusValues = new Set(TASK_STATUSES.map((status) => status.value));

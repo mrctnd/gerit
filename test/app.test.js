@@ -191,11 +191,46 @@ test('iş aşaması, ilerleme ve özel hatırlatma ayrıntılarda saklanır', as
   assert.equal(task.progress, 45);
   assert.equal(task.reminderAt, '2026-08-27T06:00:00.000Z');
 
-  const workflow = await request(app).get('/workflow').expect(200);
-  assert.match(workflow.text, /İş Akışı/);
-  assert.match(workflow.text, /Yönetim sunumunu hazırla/);
-  assert.match(workflow.text, /%45/);
-  assert.match(workflow.text, /Devam ediyor/);
+  const tasks = await request(app).get('/tasks').expect(200);
+  assert.match(tasks.text, /Tüm İşler/);
+  assert.match(tasks.text, /Şimdi/);
+  assert.match(tasks.text, /Yönetim sunumunu hazırla/);
+  assert.match(tasks.text, /%45/);
+  assert.match(tasks.text, /Devam ediyor/);
+
+  await request(app)
+    .get('/workflow')
+    .expect(302)
+    .expect('Location', '/tasks');
+});
+
+test('sade görev menüsü ve aylık takvim tarihli işleri birlikte gösterir', async () => {
+  const scheduled = dbModule.addTask({
+    title: 'Eylül teklif teslimi',
+    project: 'teklif',
+    priority: 1,
+    dueAt: '2026-09-14T07:00:00.000Z',
+    status: 'in_progress',
+  });
+  const completed = dbModule.addTask({
+    title: 'Eylül hazırlık kontrolü',
+    dueAt: '2026-09-03T09:00:00.000Z',
+  });
+  dbModule.completeTask(completed.id);
+
+  const calendar = await request(app).get('/calendar?month=2026-09').expect(200);
+  assert.match(calendar.text, /Eylül 2026/);
+  assert.match(calendar.text, /Eylül teklif teslimi/);
+  assert.match(calendar.text, /Eylül hazırlık kontrolü/);
+  assert.match(calendar.text, /href="\/calendar\?month=2026-08"/);
+  assert.match(calendar.text, /href="\/calendar\?month=2026-10"/);
+  assert.match(calendar.text, new RegExp(`/tasks/${scheduled.id}/edit`));
+
+  const today = await request(app).get('/today').expect(200);
+  assert.match(today.text, /href="\/calendar"/);
+  assert.match(today.text, /href="\/tasks"/);
+  assert.doesNotMatch(today.text, /href="\/upcoming"/);
+  assert.doesNotMatch(today.text, /href="\/inbox"/);
 });
 
 test('zaman damgalı çalışma notu eklenir ve aramada bulunur', async () => {
@@ -602,7 +637,7 @@ test('due reminders are sent once and then marked', async () => {
     const payload = JSON.parse(calls[0].options.body);
     assert.equal(payload.topic, 'local-tasks-test-topic');
     assert.match(payload.message, new RegExp(`^${task.title}`));
-    assert.match(payload.message, /Planlandı · %0/);
+    assert.match(payload.message, /Yapılacak · %0/);
     assert.equal(payload.priority, 5);
   } finally {
     globalThis.fetch = originalFetch;
@@ -786,6 +821,7 @@ test('sağlık kontrolü veritabanı durumunu bildirir', async () => {
 
 test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async () => {
   const response = await request(app).get('/today').expect(200);
+  const attention = await request(app).get('/presales/attention').expect(200);
 
   assert.match(response.text, /id="appearance-dialog"/);
   assert.match(response.text, /data-theme-option="forest"/);
@@ -794,7 +830,7 @@ test('görünüm paneli yerel tema, font ve hareket seçeneklerini sunar', async
   assert.match(response.text, /data-motion-preview-marker/);
   assert.match(response.text, /data-scale-input/);
   assert.match(response.text, /src="\/preferences\.js\?v=[^"]+"/);
-  assert.match(response.text, /action="\/notifications\/test"/);
+  assert.match(attention.text, /action="\/notifications\/test"/);
 });
 
 test('appearance preferences persist in SQLite and render on the next page load', async () => {

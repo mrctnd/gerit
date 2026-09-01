@@ -34,7 +34,7 @@
         </select>
       </label>
       <label class="field">
-        <span>Aşama</span>
+        <span>Durum</span>
         <select name="status" <%= task.completedAt ? 'disabled' : '' %>>
           <% if (task.completedAt) { %>
             <option value="completed" selected>Tamamlandı</option>
@@ -45,26 +45,31 @@
           <% } %>
         </select>
       </label>
-      <label class="field progress-field">
-        <span>İlerleme <output data-progress-output>%<%= task.progress %></output></span>
-        <input name="progress" type="range" min="0" max="100" step="5" value="<%= task.progress %>" <%= task.completedAt ? 'disabled' : '' %>>
-        <small>İşin tamamlanma düzeyini yüzde olarak güncelle</small>
-      </label>
       <label class="field">
         <span>Son tarih</span>
         <input name="dueAt" type="datetime-local" value="<%= toDateTimeInput(task.dueAt) %>">
       </label>
-      <label class="field">
-        <span>Özel hatırlatma</span>
-        <input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(task.reminderAt) %>">
-        <small>Son tarihten önce olmalı · <%= config.notificationMode === 'desktop' ? 'yerel bildirim etkin' : config.notificationsEnabled ? 'ntfy etkin' : 'ntfy henüz ayarlı değil' %></small>
-      </label>
-      <label class="field">
-        <span>Tekrar</span>
-        <input name="recurrence" value="<%= task.recurrence || '' %>" placeholder="her pazartesi,perşembe">
-        <small>Türkçe tekrar ifadesi veya standart RRULE</small>
-      </label>
     </div>
+    <details class="task-advanced">
+      <summary>İlerleme, hatırlatma ve tekrar</summary>
+      <div class="form-grid">
+        <label class="field progress-field">
+          <span>İlerleme <output data-progress-output>%<%= task.progress %></output></span>
+          <input name="progress" type="range" min="0" max="100" step="5" value="<%= task.progress %>" <%= task.completedAt ? 'disabled' : '' %>>
+          <small>İşin tamamlanma düzeyi</small>
+        </label>
+        <label class="field">
+          <span>Özel hatırlatma</span>
+          <input name="reminderAt" type="datetime-local" value="<%= toDateTimeInput(task.reminderAt) %>">
+          <small>Son tarihten önce olmalı · <%= config.notificationMode === 'desktop' ? 'yerel bildirim etkin' : config.notificationsEnabled ? 'ntfy etkin' : 'bildirim kapalı' %></small>
+        </label>
+        <label class="field">
+          <span>Tekrar</span>
+          <input name="recurrence" value="<%= task.recurrence || '' %>" placeholder="her pazartesi,perşembe">
+          <small>Türkçe tekrar ifadesi veya standart RRULE</small>
+        </label>
+      </div>
+    </details>
     <div class="form-actions">
       <button class="primary-button" type="submit">Değişiklikleri kaydet</button>
       <a class="secondary-button" href="<%= returnTo %>">Vazgeç</a>
