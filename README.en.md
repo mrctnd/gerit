@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe"><img alt="Download Windows x64 setup" src="https://img.shields.io/badge/Windows_x64-Download_setup-0a66c2?logo=windows11&logoColor=white"></a>
-  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz"><img alt="Download Linux x64 bundle" src="https://img.shields.io/badge/Linux_x64-Download_bundle-333333?logo=linux&logoColor=white"></a>
+  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.2/Gerit-Setup-0.3.2-x64.exe"><img alt="Download Windows x64 setup" src="https://img.shields.io/badge/Windows_x64-Download_setup-0a66c2?logo=windows11&logoColor=white"></a>
+  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.2/gerit-v0.3.2-linux-x64.tar.gz"><img alt="Download Linux x64 bundle" src="https://img.shields.io/badge/Linux_x64-Download_bundle-333333?logo=linux&logoColor=white"></a>
   <a href="https://github.com/mrctnd/gerit/releases"><img alt="All releases" src="https://img.shields.io/badge/GitHub-All_releases-24292f?logo=github&logoColor=white"></a>
 </p>
 
@@ -29,9 +29,9 @@ The name comes from the Latin *gerere*: “to carry out” or “to accomplish.�
 
 | Installation | Best for | Requirement | Start here |
 | --- | --- | --- | --- |
-| **Windows x64 setup** (recommended) | Windows 10/11 users | None | [Download the setup directly](https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe) |
+| **Windows x64 setup** (recommended) | Windows 10/11 users | None | [Download the setup directly](https://github.com/mrctnd/gerit/releases/download/v0.3.2/Gerit-Setup-0.3.2-x64.exe) |
 | **Docker Compose** | Portable service installs and simple updates | Docker Desktop or Docker Engine | [Open the Docker steps](#docker-setup) |
-| **Linux x64 bundle** | Running with production dependencies bundled | Node.js 22.13+ | [Download the Linux bundle directly](https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz) |
+| **Linux x64 bundle** | Running with production dependencies bundled | Node.js 22.13+ | [Download the Linux bundle directly](https://github.com/mrctnd/gerit/releases/download/v0.3.2/gerit-v0.3.2-linux-x64.tar.gz) |
 | **Source code** | Developers and custom deployments | Git, Node.js 22.13+, npm 10+ | [Open the Node.js steps](#install-with-nodejs) |
 
 On Windows, download the first option, run setup, and launch the **Gerit** shortcut. To update, close Gerit and install the new setup over the existing installation; tasks, presales cases, and appearance settings remain intact.
@@ -39,10 +39,10 @@ On Windows, download the first option, run setup, and launch the **Gerit** short
 All assets are available on [GitHub Releases](https://github.com/mrctnd/gerit/releases). GitHub CLI users can also download the installer from a terminal:
 
 ```powershell
-gh release download v0.3.1 --repo mrctnd/gerit --pattern "Gerit-Setup-*.exe"
+gh release download v0.3.2 --repo mrctnd/gerit --pattern "Gerit-Setup-*.exe"
 ```
 
-For source archives, use the [ZIP](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.1.zip) or [tar.gz](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.1.tar.gz) download.
+For source archives, use the [ZIP](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.2.zip) or [tar.gz](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.2.tar.gz) download.
 
 ## Features
 
@@ -72,7 +72,7 @@ The interface is currently Turkish. English UI localization is welcome as a futu
 
 ## Windows desktop setup
 
-1. Download [`Gerit-Setup-0.3.1-x64.exe`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe).
+1. Download [`Gerit-Setup-0.3.2-x64.exe`](https://github.com/mrctnd/gerit/releases/download/v0.3.2/Gerit-Setup-0.3.2-x64.exe).
 2. Run setup and choose an installation folder for your Windows user.
 3. Open **Gerit** from the Start menu or desktop shortcut.
 4. Allow notifications when prompted so reminders can reach you.
@@ -86,10 +86,10 @@ The interface is currently Turkish. English UI localization is welcome as a futu
 
 ### Verify the download
 
-Compare your setup hash with the value published in [`SHA256SUMS.txt`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/SHA256SUMS.txt):
+Compare your setup hash with the value published in [`SHA256SUMS.txt`](https://github.com/mrctnd/gerit/releases/download/v0.3.2/SHA256SUMS.txt):
 
 ```powershell
-Get-FileHash .\Gerit-Setup-0.3.1-x64.exe -Algorithm SHA256
+Get-FileHash .\Gerit-Setup-0.3.2-x64.exe -Algorithm SHA256
 ```
 
 ## Docker setup
@@ -106,7 +106,7 @@ Open [http://127.0.0.1:3030](http://127.0.0.1:3030). Compose publishes the port 
 
 ## Linux x64 release bundle
 
-Download [`gerit-v0.3.1-linux-x64.tar.gz`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz). Node.js 22.13+ is still required, but production dependencies are bundled.
+Download [`gerit-v0.3.2-linux-x64.tar.gz`](https://github.com/mrctnd/gerit/releases/download/v0.3.2/gerit-v0.3.2-linux-x64.tar.gz). Node.js 22.13+ is still required, but production dependencies are bundled.
 
 ```sh
 # Linux

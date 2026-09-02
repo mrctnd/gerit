@@ -4,6 +4,8 @@ Bu proje [Semantic Versioning](https://semver.org/) kullanır. Kullanıcıyı et
 
 ## [Yayımlanmadı]
 
+## [0.3.2] - 2026-09-02
+
 ### Eklendi
 
 - Tarihli açık ve tamamlanmış işleri aynı ay üzerinde gösteren, önceki/sonraki ay geçişleri ve ay özeti bulunan büyük görev takvimi.

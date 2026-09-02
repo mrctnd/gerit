@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe"><img alt="Windows x64 setup indir" src="https://img.shields.io/badge/Windows_x64-Setup_indir-0a66c2?logo=windows11&logoColor=white"></a>
-  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz"><img alt="Linux x64 paket indir" src="https://img.shields.io/badge/Linux_x64-Paketi_indir-333333?logo=linux&logoColor=white"></a>
+  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.2/Gerit-Setup-0.3.2-x64.exe"><img alt="Windows x64 setup indir" src="https://img.shields.io/badge/Windows_x64-Setup_indir-0a66c2?logo=windows11&logoColor=white"></a>
+  <a href="https://github.com/mrctnd/gerit/releases/download/v0.3.2/gerit-v0.3.2-linux-x64.tar.gz"><img alt="Linux x64 paket indir" src="https://img.shields.io/badge/Linux_x64-Paketi_indir-333333?logo=linux&logoColor=white"></a>
   <a href="https://github.com/mrctnd/gerit/releases"><img alt="Tüm sürümler" src="https://img.shields.io/badge/GitHub-Tum_surumler-24292f?logo=github&logoColor=white"></a>
 </p>
 
@@ -29,9 +29,9 @@ Adı Latince *gerere* kökünden gelir: “yürütmek, yerine getirmek”.
 
 | Kurulum yolu | Kimler için? | Gereksinim | Başlangıç |
 | --- | --- | --- | --- |
-| **Windows x64 setup** (önerilen) | Windows 10/11 kullanıcıları | Yok | [Setup dosyasını doğrudan indir](https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe) |
+| **Windows x64 setup** (önerilen) | Windows 10/11 kullanıcıları | Yok | [Setup dosyasını doğrudan indir](https://github.com/mrctnd/gerit/releases/download/v0.3.2/Gerit-Setup-0.3.2-x64.exe) |
 | **Docker Compose** | Kolay güncelleme ve taşınabilir servis isteyenler | Docker Desktop veya Docker Engine | [Docker adımlarına git](#docker-ile-kurulum) |
-| **Linux x64 paketi** | Hazır üretim bağımlılıklarıyla çalıştırmak isteyenler | Node.js 22.13+ | [Linux paketini doğrudan indir](https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz) |
+| **Linux x64 paketi** | Hazır üretim bağımlılıklarıyla çalıştırmak isteyenler | Node.js 22.13+ | [Linux paketini doğrudan indir](https://github.com/mrctnd/gerit/releases/download/v0.3.2/gerit-v0.3.2-linux-x64.tar.gz) |
 | **Kaynak kod** | Geliştiriciler ve özelleştirme yapanlar | Git, Node.js 22.13+, npm 10+ | [Node.js adımlarına git](#nodejs-ile-kurulum) |
 
 Windows kullanıyorsanız ilk seçeneği indirin, setup'ı çalıştırın ve **Gerit** kısayolunu açın. Güncelleme için uygulamayı kapatıp yeni setup'ı mevcut kurulumun üzerine çalıştırmanız yeterlidir; görevleriniz, presales dosyalarınız ve görünüm ayarlarınız korunur.
@@ -39,10 +39,10 @@ Windows kullanıyorsanız ilk seçeneği indirin, setup'ı çalıştırın ve **
 Sürüm dosyalarının tamamı [GitHub Releases](https://github.com/mrctnd/gerit/releases) sayfasındadır. GitHub CLI kullananlar kurulumu terminalden de indirebilir:
 
 ```powershell
-gh release download v0.3.1 --repo mrctnd/gerit --pattern "Gerit-Setup-*.exe"
+gh release download v0.3.2 --repo mrctnd/gerit --pattern "Gerit-Setup-*.exe"
 ```
 
-Kaynak kodu arşiv olarak almak için [ZIP](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.1.zip) veya [tar.gz](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.1.tar.gz) bağlantısını kullanabilirsiniz.
+Kaynak kodu arşiv olarak almak için [ZIP](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.2.zip) veya [tar.gz](https://github.com/mrctnd/gerit/archive/refs/tags/v0.3.2.tar.gz) bağlantısını kullanabilirsiniz.
 
 ## Neler sunuyor?
 
@@ -71,7 +71,7 @@ Kaynak kodu arşiv olarak almak için [ZIP](https://github.com/mrctnd/gerit/arch
 
 ## Windows masaüstü kurulumu
 
-1. [`Gerit-Setup-0.3.1-x64.exe`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/Gerit-Setup-0.3.1-x64.exe) dosyasını indirin.
+1. [`Gerit-Setup-0.3.2-x64.exe`](https://github.com/mrctnd/gerit/releases/download/v0.3.2/Gerit-Setup-0.3.2-x64.exe) dosyasını indirin.
 2. Setup'ı açın, yalnızca kendi kullanıcı hesabınız için kurulum klasörünü seçin.
 3. Başlat menüsü veya masaüstündeki **Gerit** kısayolunu açın.
 4. Bildirim izni sorulursa hatırlatmaları alabilmek için izin verin.
@@ -85,10 +85,10 @@ Kaynak kodu arşiv olarak almak için [ZIP](https://github.com/mrctnd/gerit/arch
 
 ### İndirmeyi doğrulama
 
-Her sürümde yayınlanan [`SHA256SUMS.txt`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/SHA256SUMS.txt) dosyasındaki değer ile indirdiğiniz setup'ın özetini karşılaştırın:
+Her sürümde yayınlanan [`SHA256SUMS.txt`](https://github.com/mrctnd/gerit/releases/download/v0.3.2/SHA256SUMS.txt) dosyasındaki değer ile indirdiğiniz setup'ın özetini karşılaştırın:
 
 ```powershell
-Get-FileHash .\Gerit-Setup-0.3.1-x64.exe -Algorithm SHA256
+Get-FileHash .\Gerit-Setup-0.3.2-x64.exe -Algorithm SHA256
 ```
 
 ## Docker ile kurulum
@@ -111,7 +111,7 @@ git pull --ff-only && docker compose up -d --build   # güncelle
 
 ## Linux x64 paketi
 
-[`gerit-v0.3.1-linux-x64.tar.gz`](https://github.com/mrctnd/gerit/releases/download/v0.3.1/gerit-v0.3.1-linux-x64.tar.gz) paketini indirin ve arşivi açın. Node.js 22.13+ kurulu olmalıdır.
+[`gerit-v0.3.2-linux-x64.tar.gz`](https://github.com/mrctnd/gerit/releases/download/v0.3.2/gerit-v0.3.2-linux-x64.tar.gz) paketini indirin ve arşivi açın. Node.js 22.13+ kurulu olmalıdır.
 
 Linux:
 
